@@ -1,4 +1,4 @@
 import biox
 
 # modules
-import TabReader
+from TabReader import *
