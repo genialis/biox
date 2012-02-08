@@ -8,7 +8,7 @@ class Bowtie():
     def __init__(self):
         self.bowtie_exec = pjoin(biox.bowtie_folder, "bowtie")
         self.bowtie_build_exec = pjoin(biox.bowtie_folder, "bowtie-build")
-        self.samtools_exec = pjoin(biox.map.samtools_folder, "samtools")
+        self.samtools_exec = pjoin(biox.samtools_folder, "samtools")
         self.trim3 = False
         self.sam = True
         self.mode_n = True
