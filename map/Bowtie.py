@@ -80,13 +80,15 @@ class Bowtie():
             r = f.readline()
         return (reads, mapped)
         
-    def map(self, index, input, output, stats=None, bam=True, delete_temp=True):
+    def map(self, index, input, output, index_path=None, stats=None, bam=True, delete_temp=True):
         sam_par = "--sam" if self.sam else ""
         n_par = "-n %s" % self.n if self.mode_n else ""
         v_par = "-v %s" % self.v if self.mode_v else ""
         m_par = "-m %s" % self.m if self.m != None else ""
         fasta_par = "-f" if self.mode_fasta==True else ""
         index_par = pjoin(biox.map.bowtie_index_folder, index)
+        if index_path!=None: # specify direct path to bowtie index
+            index_par = index_path
         sam_files = []
         stat_files = []
         un_files = []
