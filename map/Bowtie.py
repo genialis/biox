@@ -215,7 +215,7 @@ class Bowtie():
         return True
         
     def make_index(self, fasta, index_name):
-        output = pjoin(biox.map.bowtie_index_folder, index_name)
+        output = pjoin(biox.bowtie_index_folder, index_name)
         command = "{bowtie_build_exec} {fasta} {output}".format \
         (bowtie_build_exec = self.bowtie_build_exec, fasta = fasta, output = output)
         std, err = biox.utils.cmd(command)
