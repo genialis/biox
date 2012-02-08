@@ -4,3 +4,4 @@ import biox
 import data
 import map
 import utils
+from config import *
