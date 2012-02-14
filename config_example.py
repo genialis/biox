@@ -1,3 +1,3 @@
-bowtie_folder =
-bowtie_index_folder = 
-samtools_folder = 
+bowtie_folder = ""
+bowtie_index_folder = ""
+samtools_folder = ""
