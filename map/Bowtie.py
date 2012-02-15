@@ -2,6 +2,9 @@ import biox
 from os.path import join as pjoin
 import os
 import sys
+import locale
+
+locale.setlocale(locale.LC_ALL, '')
 
 class Bowtie():
 
@@ -18,7 +21,7 @@ class Bowtie():
         self.max_enabled = None
         self.mode_fasta = False
         self.n = self.v = 2
-        self.m = None
+        self.m = 1
         
     def set_mode_n(self):
         self.mode_n = True
@@ -86,8 +89,9 @@ class Bowtie():
             r = f.readline()
         return (reads, mapped)
         
-    def map(self, index, input, output, index_path=None, stats=None, bam=True, delete_temp=True):
+    def map(self, index, input, output, index_path=None, create_stats=True, bam=True, delete_temp=True, bam_include_unmapped = False):
         sam_par = "--sam" if self.sam else ""
+        bam_unmapped_par = "-F 4" if bam_include_unmapped else ""
         n_par = "-n %s" % self.n if self.mode_n else ""
         v_par = "-v %s" % self.v if self.mode_v else ""
         m_par = "-m %s" % self.m if self.m != None else ""
@@ -100,7 +104,7 @@ class Bowtie():
         un_files = []
         bam_files = []
         if self.trim3==False:
-            stats_par = "%s.stats" % (output) if stats==True else "/dev/null" 
+            stats_par = "%s.stats" % (output) if create_stats else "/dev/null" 
             if type(input)==list:
                 if len(input)==2:
                     input_par = "-1 %s -2 %s" % (input[0], input[1])
@@ -121,9 +125,9 @@ class Bowtie():
                 un_files.append(output+".unmapped")
             if bam: # create bam file
                 bam_output = "%s.bam" % output
-                command = "{samtools_exec} view -F 4 -bS {sam} > {bam}".format(samtools_exec = self.samtools_exec, sam = output_par, bam = bam_output)
+                command = "{samtools_exec} view {bam_unmapped_par} -bS {sam} > {bam}".format(samtools_exec = self.samtools_exec, sam = output_par, bam = bam_output, bam_unmapped_par = bam_unmapped_par)
                 str, err = biox.utils.cmd(command)
-            if stats:
+            if create_stats:
                 stat_files.append(stats_par)
                 reads, mapped = self.read_statfile(stats_par)
                 stats_par_tab = "%s.stats.tab" % (output)
@@ -136,7 +140,7 @@ class Bowtie():
             mapped = {}
             for t in range(0, self.trim3_iter+1):
                 trim3 = t * self.trim3_step
-                stats_par = "%s.trim%s.stats" % (output, trim3) if stats==True else "/dev/null" 
+                stats_par = "%s.trim%s.stats" % (output, trim3) if create_stats else "/dev/null" 
                 
                 if t==0:
                     if type(input)==list:
@@ -178,10 +182,10 @@ class Bowtie():
                         un_files.append(un_par)
                 if bam:
                     bam_file = output_par[:-3]+"bam"
-                    command = "{samtools_exec} view -F 4 -bS {sam} > {bam}".format(samtools_exec = self.samtools_exec, sam = output_par, bam = bam_file)
+                    command = "{samtools_exec} view {bam_unmapped_par} -bS {sam} > {bam}".format(samtools_exec = self.samtools_exec, sam = output_par, bam = bam_file, bam_unmapped_par = bam_unmapped_par)
                     bam_files.append(output_par[:-3]+"bam")
                     str, err = biox.utils.cmd(command)
-                if stats:
+                if create_stats:
                     stat_files.append(stats_par)
                     reads[trim3], mapped[trim3] = self.read_statfile(stats_par)
             # merge bam files
@@ -191,14 +195,21 @@ class Bowtie():
                 header_sam = output_par, bam_output = bam_output, bam_files = " ".join(bam_files))
                 str, err = biox.utils.cmd(command)
             # create trim statistics
-            trims = reads.keys()
-            trims.sort()
-            stats_par_tab = "%s.stats.tab" % (output)
-            f = open(stats_par_tab, "wt")
-            f.write("trim3 size\treads processed\treads mapped\n")
-            for trim in trims:
-                f.write("%s\t%s\t%s\n" % (trim, reads.get(trim, 0), mapped.get(trim, 0)))
-            f.close()
+            if create_stats:
+                all_reads = 0
+                mapped_reads = 0
+                trims = reads.keys()
+                trims.sort()
+                stats_par_tab = "%s.stats.tab" % (output)
+                f = open(stats_par_tab, "wt")
+                f.write("trim3 size\treads processed\treads mapped\treads mapped (perc.)\n")
+                for trim in trims:
+                    perc = (float(mapped.get(trim, 0)) / float(reads.get(trim, 0)) ) * 100
+                    f.write(locale.format("%s\t%s\t%s\t%.2f%%\n" % (trim, reads.get(trim, 0), mapped.get(trim, 0), perc)))
+                    all_reads = max(all_reads, float(reads.get(trim, 0)))
+                    mapped_reads += float(mapped.get(trim, 0))
+                f.write(locale.format("all\t100%%\t%.2f%%\t\n" % (mapped_reads/all_reads*100)))
+                f.close()
                 
         if bam: # sort and index bam file
             bam_sorted = bam_output[:-4]+"_sorted"
