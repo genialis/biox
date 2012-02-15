@@ -48,6 +48,9 @@ class Bowtie():
     def set_sam(self, sam):
         self.sam = sam
         
+    def set_processors(self, processors):
+        self.processors = processors
+        
     def set_mode_fasta(self):
         self.mode_fasta = True
         self.set_mode_v()
