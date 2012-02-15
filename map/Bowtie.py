@@ -13,8 +13,10 @@ class Bowtie():
         self.sam = True
         self.mode_n = True
         self.mode_v = False
+        self.processors = 2
         self.un_enabled = None
         self.max_enabled = None
+        self.mode_fasta = False
         self.n = self.v = 2
         self.m = None
         
@@ -46,6 +48,10 @@ class Bowtie():
     def set_mode_fasta(self):
         self.mode_fasta = True
         self.set_mode_v()
+
+    def set_mode_fastq(self):
+        self.mode_fasta = False
+        self.set_mode_n()
         
     def enable_trim3(self, trim3_iter=None, trim3_step=None):
         self.trim3 = True
@@ -86,7 +92,7 @@ class Bowtie():
         v_par = "-v %s" % self.v if self.mode_v else ""
         m_par = "-m %s" % self.m if self.m != None else ""
         fasta_par = "-f" if self.mode_fasta==True else ""
-        index_par = pjoin(biox.map.bowtie_index_folder, index)
+        index_par = pjoin(biox.bowtie_index_folder, index)
         if index_path!=None: # specify direct path to bowtie index
             index_par = index_path
         sam_files = []
@@ -105,10 +111,10 @@ class Bowtie():
             output_par = "%s.sam" % output
             un_par = "--un "+output+".unmapped" if self.un_enabled else ""
             max_par = "--max "+output+".maxmulti" if self.max_enabled else ""
-            command = "{bowtie_exec} {un_par} {max_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
+            command = "{bowtie_exec} {processors} {un_par} {max_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
             (bowtie_exec = self.bowtie_exec, fasta_par = fasta_par, index_par = index_par, input_par = input_par, output_par = output_par, \
             sam_par = sam_par, n_par = n_par, v_par = v_par, output_stats = stats_par, m_par = m_par, \
-            un_par = un_par, max_par = max_par)
+            un_par = un_par, max_par = max_par, processors = "-p " % self.processors)
             str, err = biox.utils.cmd(command)
             sam_files.append(output_par)
             if self.un_enabled:
@@ -156,10 +162,10 @@ class Bowtie():
                 max_par = "--max "+output+".trim%s.maxmulti" % trim3 if self.max_enabled else ""
                 trim3_par = "--trim3 %s" % trim3
                 output_par = output+".trim%s.sam" % trim3
-                command = "{bowtie_exec} --un {un_par} {max_par} {trim3_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
+                command = "{bowtie_exec} {processors} --un {un_par} {max_par} {trim3_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
                 (bowtie_exec = self.bowtie_exec, fasta_par = fasta_par, index_par = index_par, input_par = input_par, output_par = output_par, \
                 sam_par = sam_par, n_par = n_par, v_par = v_par, output_stats = stats_par, m_par = m_par, trim3_par = trim3_par, \
-                un_par = un_par, max_par = max_par)
+                un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors)
                 str, err = biox.utils.cmd(command)
                 sam_files.append(output_par)
                 if type(input)==list:
