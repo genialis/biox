@@ -22,10 +22,17 @@ class Bowtie():
         self.mode_fasta = False
         self.n = self.v = 2
         self.m = 1
+        self.u = None
         
     def set_mode_n(self):
         self.mode_n = True
         self.mode_v = False
+        
+    def enable_u(self, u):
+        self.u = u
+    
+    def disable_u(self):
+        self.u = None
     
     def set_mode_v(self):
         self.mode_v = True
@@ -95,6 +102,7 @@ class Bowtie():
     def map(self, index, input, output, index_path=None, create_stats=True, bam=True, delete_temp=True, bam_include_unmapped = False):
         sam_par = "--sam" if self.sam else ""
         bam_unmapped_par = "-F 4" if bam_include_unmapped else ""
+        u_par = "-u %s" % self.u if self.u!=None else ""
         n_par = "-n %s" % self.n if self.mode_n else ""
         v_par = "-v %s" % self.v if self.mode_v else ""
         m_par = "-m %s" % self.m if self.m != None else ""
@@ -118,17 +126,17 @@ class Bowtie():
             output_par = "%s.sam" % output
             un_par = "--un "+output+".unmapped" if self.un_enabled else ""
             max_par = "--max "+output+".maxmulti" if self.max_enabled else ""
-            command = "{bowtie_exec} {processors} {un_par} {max_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
+            command = "{bowtie_exec} {u_par} {processors} {un_par} {max_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
             (bowtie_exec = self.bowtie_exec, fasta_par = fasta_par, index_par = index_par, input_par = input_par, output_par = output_par, \
             sam_par = sam_par, n_par = n_par, v_par = v_par, output_stats = stats_par, m_par = m_par, \
-            un_par = un_par, max_par = max_par, processors = "-p " % self.processors)
+            un_par = un_par, max_par = max_par, processors = "-p " % self.processors, u_par = u_par)
             str, err = biox.utils.cmd(command)
             sam_files.append(output_par)
             if self.un_enabled:
                 un_files.append(output+".unmapped")
             if bam: # create bam file
                 bam_output = "%s.bam" % output
-                command = "{samtools_exec} view {bam_unmapped_par} -bS {sam} > {bam}".format(samtools_exec = self.samtools_exec, sam = output_par, bam = bam_output, bam_unmapped_par = bam_unmapped_par)
+                command = "{samtools_exec} view -F 4 {bam_unmapped_par} -bS {sam} > {bam}".format(samtools_exec = self.samtools_exec, sam = output_par, bam = bam_output, bam_unmapped_par = bam_unmapped_par)
                 str, err = biox.utils.cmd(command)
             if create_stats:
                 stat_files.append(stats_par)
@@ -169,10 +177,10 @@ class Bowtie():
                 max_par = "--max "+output+".trim%s.maxmulti" % trim3 if self.max_enabled else ""
                 trim3_par = "--trim3 %s" % trim3
                 output_par = output+".trim%s.sam" % trim3
-                command = "{bowtie_exec} {processors} --un {un_par} {max_par} {trim3_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
+                command = "{bowtie_exec} {u_par} {processors} --un {un_par} {max_par} {trim3_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
                 (bowtie_exec = self.bowtie_exec, fasta_par = fasta_par, index_par = index_par, input_par = input_par, output_par = output_par, \
                 sam_par = sam_par, n_par = n_par, v_par = v_par, output_stats = stats_par, m_par = m_par, trim3_par = trim3_par, \
-                un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors)
+                un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors, u_par = u_par)
                 str, err = biox.utils.cmd(command)
                 sam_files.append(output_par)
                 if type(input)==list:
@@ -185,7 +193,7 @@ class Bowtie():
                         un_files.append(un_par)
                 if bam:
                     bam_file = output_par[:-3]+"bam"
-                    command = "{samtools_exec} view {bam_unmapped_par} -bS {sam} > {bam}".format(samtools_exec = self.samtools_exec, sam = output_par, bam = bam_file, bam_unmapped_par = bam_unmapped_par)
+                    command = "{samtools_exec} view -F 4 {bam_unmapped_par} -bS {sam} > {bam}".format(samtools_exec = self.samtools_exec, sam = output_par, bam = bam_file, bam_unmapped_par = bam_unmapped_par)
                     bam_files.append(output_par[:-3]+"bam")
                     str, err = biox.utils.cmd(command)
                 if create_stats:
@@ -194,8 +202,8 @@ class Bowtie():
             # merge bam files
             if bam:
                 bam_output = "%s.bam" % output
-                command = "{samtools_exec} merge -h {header_sam} {bam_output} {bam_files}".format(samtools_exec = self.samtools_exec, \
-                header_sam = output_par, bam_output = bam_output, bam_files = " ".join(bam_files))
+                command = "{samtools_exec} merge -h {header_sam} -f {bam_output} {bam_files}".format(samtools_exec = self.samtools_exec, \
+                header_sam = output+".trim0.sam", bam_output = bam_output, bam_files = " ".join(bam_files))
                 str, err = biox.utils.cmd(command)
             # create trim statistics
             if create_stats:
@@ -207,11 +215,11 @@ class Bowtie():
                 f = open(stats_par_tab, "wt")
                 f.write("trim3 size\treads processed\treads mapped\treads mapped (perc.)\n")
                 for trim in trims:
-                    perc = (float(mapped.get(trim, 0)) / float(reads.get(trim, 0)) ) * 100
-                    f.write(locale.format("%s\t%s\t%s\t%.2f%%\n" % (trim, reads.get(trim, 0), mapped.get(trim, 0), perc)))
+                    perc = (float(mapped.get(trim, 0)) / max(float(reads.get(trim, 1)), 1) ) * 100
+                    f.write("%s\t%s\t%s\t%.2f%%\n" % (trim, locale.format("%d", reads.get(trim, 0), True), locale.format("%d", mapped.get(trim, 0), True), perc))
                     all_reads = max(all_reads, float(reads.get(trim, 0)))
                     mapped_reads += float(mapped.get(trim, 0))
-                f.write(locale.format("all\t100%%\t%.2f%%\t\n" % (mapped_reads/all_reads*100)))
+                f.write("all\t100%%\t%.2f%%\t\n" % (mapped_reads/max(all_reads, 1) * 100))
                 f.close()
                 
         if bam: # sort and index bam file
@@ -225,15 +233,19 @@ class Bowtie():
 
         if delete_temp:
             for stat_file in stat_files:
-                os.remove(stat_file)
+                if os.path.exists(stat_file):
+                    os.remove(stat_file)
         if delete_temp and bam: # remove sam
             for sam_file in sam_files:
-                os.remove(sam_file)
+                if os.path.exists(sam_file):
+                    os.remove(sam_file)
             for bam_file in bam_files:
-                os.remove(bam_file)
+                if os.path.exists(bam_file):
+                    os.remove(bam_file)
         if delete_temp and self.un_enabled in [False, None]:
             for un_file in un_files:
-                os.remove(un_file)
+                if os.path.exists(un_file):
+                    os.remove(un_file)
         return True
         
     def make_index(self, fasta, index_name):
