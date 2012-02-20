@@ -126,7 +126,7 @@ class Bowtie():
             output_par = "%s.sam" % output
             un_par = "--un "+output+".unmapped" if self.un_enabled else ""
             max_par = "--max "+output+".maxmulti" if self.max_enabled else ""
-            command = "{bowtie_exec} {u_par} {processors} {un_par} {max_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
+            command = "{bowtie_exec} -a {u_par} {processors} {un_par} {max_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
             (bowtie_exec = self.bowtie_exec, fasta_par = fasta_par, index_par = index_par, input_par = input_par, output_par = output_par, \
             sam_par = sam_par, n_par = n_par, v_par = v_par, output_stats = stats_par, m_par = m_par, \
             un_par = un_par, max_par = max_par, processors = "-p " % self.processors, u_par = u_par)
@@ -177,10 +177,11 @@ class Bowtie():
                 max_par = "--max "+output+".trim%s.maxmulti" % trim3 if self.max_enabled else ""
                 trim3_par = "--trim3 %s" % trim3
                 output_par = output+".trim%s.sam" % trim3
-                command = "{bowtie_exec} {u_par} {processors} --un {un_par} {max_par} {trim3_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
+                command = "{bowtie_exec} -a {u_par} {processors} --un {un_par} {max_par} {trim3_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
                 (bowtie_exec = self.bowtie_exec, fasta_par = fasta_par, index_par = index_par, input_par = input_par, output_par = output_par, \
                 sam_par = sam_par, n_par = n_par, v_par = v_par, output_stats = stats_par, m_par = m_par, trim3_par = trim3_par, \
                 un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors, u_par = u_par)
+                print command                
                 str, err = biox.utils.cmd(command)
                 sam_files.append(output_par)
                 if type(input)==list:
@@ -252,4 +253,5 @@ class Bowtie():
         output = pjoin(biox.bowtie_index_folder, index_name)
         command = "{bowtie_build_exec} {fasta} {output}".format \
         (bowtie_build_exec = self.bowtie_build_exec, fasta = fasta, output = output)
+        print command
         std, err = biox.utils.cmd(command)
