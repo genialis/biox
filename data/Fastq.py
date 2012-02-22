@@ -5,7 +5,7 @@ Example:
 
 f = FASTQreader(file_name)
 while f.read():
-    print f.identifier
+    print f.id
 """
 
 import gzip
@@ -15,14 +15,14 @@ class Fastq:
         return self.f.readline().rstrip("\r").rstrip("\n")
         
     def read(self):
-        self.identifier = self.read_line()
+        self.id = self.read_line()
         self.sequence = self.read_line()
         self.plus = self.read_line() # +
         self.quality = self.read_line()
         self.uncut_sequence = self.sequence
         self.uncut_quality = self.quality
-        self.records_read += 1
-        if self.identifier == "":
+        self.records += 1
+        if self.id == "":
                 return False
         if self.cut_bad:
             qual = self.quality.rstrip("B")
@@ -34,11 +34,11 @@ class Fastq:
     def __init__(self, file_name, cut_bad=False):
         self.cut_bad = cut_bad
         if file_name.endswith(".gz"):
-            self.f = gzip.open(file_name, "rt")
+            self.f = gzip.open(file_name)
         else:
             self.f = open(file_name, "rt")
-        self.identifier = ""
+        self.id = ""
         self.sequence = ""
         self.plus = ""
         self.quality = ""
-        self.records_read = 0
+        self.records = 0
