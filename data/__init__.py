@@ -1,14 +1,18 @@
 import biox
 
+"""
+biox.data module for managing FASTQ and FASTA data files.
+"""
+
 # modules
 from TabReader import *
 from Fastq import *
 from Fasta import *
 
-"""
-Returns min and max quality ord value from fastq file.
-"""
 def fastq_qminmax(filename):
+    """
+    Returns min and max quality ord value from fastq file.
+    """
     qmin = ()
     qmax = 0
     f = biox.data.Fastq(filename)

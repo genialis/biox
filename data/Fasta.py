@@ -2,6 +2,10 @@ import gzip
 
 class Fasta:
 
+    """
+    This class handles FASTA files.
+    """
+
     def __init__(self, file_name):
         if file_name.endswith(".gz"):
             self.f = gzip.open(file_name, "rt")
