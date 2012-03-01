@@ -4,3 +4,4 @@
    :maxdepth: 3
 
    biox.data
+   biox.map

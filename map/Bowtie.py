@@ -8,83 +8,113 @@ locale.setlocale(locale.LC_ALL, '')
 
 class Bowtie():
 
+    """
+    Mapping of reads to a reference genome
+    """
+
     def __init__(self):
         self.bowtie_exec = pjoin(biox.bowtie_folder, "bowtie")
         self.bowtie_build_exec = pjoin(biox.bowtie_folder, "bowtie-build")
         self.samtools_exec = pjoin(biox.samtools_folder, "samtools")
         self.trim3 = False
         self.sam = True
-        self.mode_n = True
-        self.mode_v = False
         self.processors = 2
-        self.un_enabled = None
-        self.max_enabled = None
+        self.un_enabled = False
+        self.max_enabled = False
         self.mode_fasta = False
-        self.n = self.v = 2
         self.m = 1
-        self.u = None
+        self.u = False
+        self.l = False
+        self.strata = False
+        self.enable_n()
         
-    def set_mode_n(self):
-        self.mode_n = True
-        self.mode_v = False
+    def enable_n(self, n=2):
+        """
+        Enable mode n of bowtie mapper.
+        """
+        self.n = n
+        self.v = False
         
+    def set_l(self, l):
+        """
+        Set seed length (l) and enable n mode.
+        """
+        self.l = l
+        self.enable_n()
+        
+    def enable_strata(self, strata):
+        """
+        Enable strata.
+        """
+        self.strata = strata
+
     def enable_u(self, u):
+        """
+        Enable mode u. Map all reads.
+        """
         self.u = u
     
-    def disable_u(self):
-        self.u = None
-    
-    def set_mode_v(self):
-        self.mode_v = True
-        self.mode_n = False
+    def enable_v(self, v=2):
+        """
+        Enable mode v
+        """
+        self.v = 2
+        self.n = False
         
     def set_m(self, m):
+        """
+        Set allowed number of multiple hits per read for the hits to be reported.
+        """
         self.m = m
         
-    def set_v(self, v):
-        self.v = v
-        self.set_mode_v()
-    
-    def set_n(self, n):
-        self.n = n
-        self.set_mode_n()
-    
-    def set_a(self, a):
-        self.a = a
-        
     def set_sam(self, sam):
+        """
+        Enable sam output.
+        """
         self.sam = sam
         
     def set_processors(self, processors):
+        """
+        Set number of processors to use.
+        """
         self.processors = processors
         
     def set_mode_fasta(self):
+        """
+        Enable fasta mode.
+        """
         self.mode_fasta = True
-        self.set_mode_v()
+        self.enable_v()
 
     def set_mode_fastq(self):
+        """
+        Enable fastq mode.
+        """
         self.mode_fasta = False
-        self.set_mode_n()
+        self.enable_n()
         
     def enable_trim3(self, trim3_iter=None, trim3_step=None):
+        """
+        Enable iterative trimming of unmapped reads from 3' end.
+        
+        :param trim3_iter: number of iterations
+        :param trim3_step: step of trimming (in nucleotides)
+        """
         self.trim3 = True
         self.trim3_iter = trim3_iter if trim3_iter!=None else 5
         self.trim3_step = trim3_step if trim3_step!=None else 2
         
     def disable_trim3(self):
+        """
+        Disable iterative trimming of unmapped reads from 3' end.
+        """
         self.trim3 = False
         
-    def enable_un(self):
-        self.un_enabled = True
+    def enable_un(self, un):
+        self.un_enabled = un
         
-    def disable_un(self):
-        self.un_enabled = False
-        
-    def enable_max(self):
-        self.max_enabled = True
-        
-    def disable_max(self):
-        self.max_enabled = False
+    def enable_max(self, mx):
+        self.max_enabled = mx
         
     def read_statfile(self, file):
         reads = mapped = 0
@@ -99,13 +129,24 @@ class Bowtie():
             r = f.readline()
         return (reads, mapped)
         
-    def map(self, index, input, output, index_path=None, create_stats=True, bam=True, delete_temp=True, bam_include_unmapped = False):
+    def map(self, index, input, output, index_path=None, create_stats=True, bam=True, delete_temp=True, bam_include_unmapped = False, only_show_cmd = False):
+        """
+        Map reads to the reference.
+        
+        :param index: the name of the reference sequence index (dd/dp)
+        :param input: full path to FASTA or FASTQ file with reads
+        :param output: output folder
+        :param index_path: specify full path to genome index, instead of using the indexes in biox.config.bowtie_index_folder folder
+        
+        """
         sam_par = "--sam" if self.sam else ""
         bam_unmapped_par = "-F 4" if bam_include_unmapped else ""
         u_par = "-u %s" % self.u if self.u!=None else ""
-        n_par = "-n %s" % self.n if self.mode_n else ""
-        v_par = "-v %s" % self.v if self.mode_v else ""
+        n_par = "-n %s" % self.n if self.n!=False else ""
+        v_par = "-v %s" % self.v if self.v!=False else ""
         m_par = "-m %s" % self.m if self.m != None else ""
+        strata_par = "--strata" if self.strata !=None else ""
+        l_par = "-l %s" % self.l if self.l != None else ""
         fasta_par = "-f" if self.mode_fasta==True else ""
         index_par = pjoin(biox.bowtie_index_folder, index)
         if index_path!=None: # specify direct path to bowtie index
@@ -126,19 +167,25 @@ class Bowtie():
             output_par = "%s.sam" % output
             un_par = "--un "+output+".unmapped" if self.un_enabled else ""
             max_par = "--max "+output+".maxmulti" if self.max_enabled else ""
-            command = "{bowtie_exec} -a {u_par} {processors} {un_par} {max_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
+            command = "{bowtie_exec} {strata_par} {l_par} -a {u_par} {processors} {un_par} {max_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
             (bowtie_exec = self.bowtie_exec, fasta_par = fasta_par, index_par = index_par, input_par = input_par, output_par = output_par, \
             sam_par = sam_par, n_par = n_par, v_par = v_par, output_stats = stats_par, m_par = m_par, \
-            un_par = un_par, max_par = max_par, processors = "-p " % self.processors, u_par = u_par)
-            str, err = biox.utils.cmd(command)
+            un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors, u_par = u_par, strata_par=strata_par, l_par = l_par)
+            if not only_show_cmd:
+                str, err = biox.utils.cmd(command)
+            else:
+                print command            
             sam_files.append(output_par)
             if self.un_enabled:
                 un_files.append(output+".unmapped")
             if bam: # create bam file
                 bam_output = "%s.bam" % output
                 command = "{samtools_exec} view -F 4 {bam_unmapped_par} -bS {sam} > {bam}".format(samtools_exec = self.samtools_exec, sam = output_par, bam = bam_output, bam_unmapped_par = bam_unmapped_par)
-                str, err = biox.utils.cmd(command)
-            if create_stats:
+                if not only_show_cmd:
+                    str, err = biox.utils.cmd(command)
+                else:
+                    print command
+            if create_stats and not only_show_cmd:
                 stat_files.append(stats_par)
                 reads, mapped = self.read_statfile(stats_par)
                 stats_par_tab = "%s.stats.tab" % (output)
@@ -177,12 +224,14 @@ class Bowtie():
                 max_par = "--max "+output+".trim%s.maxmulti" % trim3 if self.max_enabled else ""
                 trim3_par = "--trim3 %s" % trim3
                 output_par = output+".trim%s.sam" % trim3
-                command = "{bowtie_exec} -a {u_par} {processors} --un {un_par} {max_par} {trim3_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
+                command = "{bowtie_exec} {strata_par} {l_par} -a {u_par} {processors} --un {un_par} {max_par} {trim3_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
                 (bowtie_exec = self.bowtie_exec, fasta_par = fasta_par, index_par = index_par, input_par = input_par, output_par = output_par, \
                 sam_par = sam_par, n_par = n_par, v_par = v_par, output_stats = stats_par, m_par = m_par, trim3_par = trim3_par, \
-                un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors, u_par = u_par)
-                print command                
-                str, err = biox.utils.cmd(command)
+                un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors, u_par = u_par, strata_par=strata_par, l_par = l_par)
+                if not only_show_cmd:
+                    str, err = biox.utils.cmd(command)
+                else:
+                    print command                
                 sam_files.append(output_par)
                 if type(input)==list:
                     if len(input)==2:
@@ -196,8 +245,11 @@ class Bowtie():
                     bam_file = output_par[:-3]+"bam"
                     command = "{samtools_exec} view -F 4 {bam_unmapped_par} -bS {sam} > {bam}".format(samtools_exec = self.samtools_exec, sam = output_par, bam = bam_file, bam_unmapped_par = bam_unmapped_par)
                     bam_files.append(output_par[:-3]+"bam")
-                    str, err = biox.utils.cmd(command)
-                if create_stats:
+                    if not only_show_cmd:
+                        str, err = biox.utils.cmd(command)
+                    else:
+                        print command                    
+                if create_stats and not only_show_cmd:
                     stat_files.append(stats_par)
                     reads[trim3], mapped[trim3] = self.read_statfile(stats_par)
             # merge bam files
@@ -205,9 +257,12 @@ class Bowtie():
                 bam_output = "%s.bam" % output
                 command = "{samtools_exec} merge -h {header_sam} -f {bam_output} {bam_files}".format(samtools_exec = self.samtools_exec, \
                 header_sam = output+".trim0.sam", bam_output = bam_output, bam_files = " ".join(bam_files))
-                str, err = biox.utils.cmd(command)
+                if not only_show_cmd:
+                    str, err = biox.utils.cmd(command)
+                else:
+                    print command                
             # create trim statistics
-            if create_stats:
+            if create_stats and not only_show_cmd:
                 all_reads = 0
                 mapped_reads = 0
                 trims = reads.keys()
@@ -226,13 +281,20 @@ class Bowtie():
         if bam: # sort and index bam file
             bam_sorted = bam_output[:-4]+"_sorted"
             command = "{samtools_exec} sort {bam} {bam_sorted}".format(samtools_exec = self.samtools_exec, bam = bam_output, bam_sorted = bam_sorted)
-            str, err = biox.utils.cmd(command)
+            if not only_show_cmd:
+                str, err = biox.utils.cmd(command)
+            else:
+                print command            
             command = "{samtools_exec} index {bam_sorted}".format(samtools_exec = self.samtools_exec, bam_sorted = bam_sorted+".bam")
-            str, err = biox.utils.cmd(command)
-            os.rename(bam_sorted+".bam", output+".bam")
-            os.rename(bam_sorted+".bam.bai", output+".bam.bai")
+            if not only_show_cmd:
+                str, err = biox.utils.cmd(command)
+            else:
+                print command
+            if not only_show_cmd:
+                os.rename(bam_sorted+".bam", output+".bam")
+                os.rename(bam_sorted+".bam.bai", output+".bam.bai")
 
-        if delete_temp:
+        if delete_temp and not only_show_cmd:
             for stat_file in stat_files:
                 if os.path.exists(stat_file):
                     os.remove(stat_file)
