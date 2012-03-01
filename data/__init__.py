@@ -8,6 +8,7 @@ biox.data module for managing FASTQ and FASTA data files.
 from TabReader import *
 from Fastq import *
 from Fasta import *
+from Bedgraph import *
 
 def fastq_qminmax(filename):
     """
