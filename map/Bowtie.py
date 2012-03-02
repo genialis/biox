@@ -139,6 +139,9 @@ class Bowtie():
         :param index_path: specify full path to genome index, instead of using the indexes in biox.config.bowtie_index_folder folder
         
         """
+        
+        input_decompressed = biox.utils.decompress(input)
+        
         sam_par = "--sam" if self.sam else ""
         bam_unmapped_par = "-F 4" if bam_include_unmapped else ""
         u_par = "-u %s" % self.u if self.u!=None else ""
@@ -309,6 +312,13 @@ class Bowtie():
             for un_file in un_files:
                 if os.path.exists(un_file):
                     os.remove(un_file)
+        
+        if input_decompressed!=input and not only_show_cmd:
+            try:
+                os.remove(input_decompressed)
+            except:
+                pass
+        
         return True
         
     def make_index(self, fasta, index_name):
