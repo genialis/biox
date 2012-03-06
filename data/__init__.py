@@ -9,6 +9,7 @@ from TabReader import *
 from Fastq import *
 from Fasta import *
 from Bedgraph import *
+from Gff3 import *
 
 def fastq_qminmax(filename):
     """
