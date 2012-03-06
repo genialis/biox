@@ -1,10 +1,9 @@
 ###################################
-biox.data (``biox.data``)
+biox.utils (``biox.utils``)
 ###################################
 
 .. toctree::
    :maxdepth: 2
 
-   biox.data.Fasta
-   biox.data.Fastq
-   biox.data.TabReader
+.. automodule:: biox.utils
+    :members:

@@ -1,10 +1,8 @@
 ###################################
-biox.data (``biox.data``)
+biox.map (``biox.map``)
 ###################################
 
 .. toctree::
    :maxdepth: 2
 
-   biox.data.Fasta
-   biox.data.Fastq
-   biox.data.TabReader
+   biox.map.Bowtie

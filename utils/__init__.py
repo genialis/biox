@@ -11,6 +11,12 @@ def cmd(command):
     return output, error
     
 def decompress(source, dest=None):
+    """
+    Decompress gzip or bzip2 files. The original compressed file is left untouched.
+    
+    :param dest: the uncompressed output is written to this file. If omitted, the uncompressed content is written to source name but without ".gz" or ".bz2". The original compressed file is left untouched.
+    """
+    
     if dest==None:
         for end in endings:
             if source.endswith(end):
@@ -19,8 +25,12 @@ def decompress(source, dest=None):
     
     if source.endswith(".gzip") or source.endswith(".gz"):
         command = "gunzip -c %s > %s" % (source, dest)
-        print command
         out, err = cmd(command)
         return dest
-    
-    return source
+        
+    if source.endswith(".bz2"):
+        command = "bunzip2 -c %s > %s" % (source, dest)
+        out, err = cmd(command)
+        return dest
+
+    return source # no decompression

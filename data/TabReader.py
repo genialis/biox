@@ -1,4 +1,9 @@
 class TabReader():
+
+    """
+    This class reads text data (.tab separated).
+    """
+
     def __init__(self, filename="", header_at = 0, fast = False):
         self.f = None
         self.header = None
