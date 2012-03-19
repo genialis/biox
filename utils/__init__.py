@@ -34,3 +34,12 @@ def decompress(source, dest=None):
         return dest
 
     return source # no decompression
+
+def gzip(source):
+    """
+    Compress (gzip) input.
+    """
+    
+    command = "gzip %s" % (source)
+    out, err = cmd(command)
+    return source+".gz"

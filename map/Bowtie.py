@@ -129,7 +129,7 @@ class Bowtie():
             r = f.readline()
         return (reads, mapped)
         
-    def map(self, index, input, output, index_path=None, create_stats=True, bam=True, delete_temp=True, bam_include_unmapped = False, simulate = False, verbose=False):
+    def map(self, index, input, output, index_path=None, create_stats=True, bam=True, delete_temp=True, bam_include_unmapped = False, simulate = False, verbose=False, keep_unmapped = True):
         """
         Map reads to the reference.
         
@@ -143,8 +143,11 @@ class Bowtie():
         
         output_log = open("%s.log" % output, "wt")
         
+        paired_input = False
+        
         if type(input)==list:
             if len(input)==2:
+                paired_input = True
                 input_decompressed = []
                 input_decompressed[0] = biox.utils.decompress(input[0])
                 input_decompressed[1] = biox.utils.decompress(input[1])
@@ -294,7 +297,8 @@ class Bowtie():
                     f.write("%s\t%s\t%s\t%.2f%%\n" % (trim, locale.format("%d", reads.get(trim, 0), True), locale.format("%d", mapped.get(trim, 0), True), perc))
                     all_reads = max(all_reads, float(reads.get(trim, 0)))
                     mapped_reads += float(mapped.get(trim, 0))
-                f.write("all\t100%%\t%.2f%%\t\n" % (mapped_reads/max(all_reads, 1) * 100))
+                f.write("all\t%s\t%s\t\n" % (locale.format("%d", all_reads, True), locale.format("%d", mapped_reads, True)))
+                f.write("all_perc\t100%%\t%.2f%%\t\n" % (mapped_reads/max(all_reads, 1) * 100))
                 f.close()
                 
         if bam: # sort and index bam file
@@ -341,13 +345,31 @@ class Bowtie():
                     if verbose:
                         print "rm %s" % bam_file
         if delete_temp and self.un_enabled in [False, None]:
-            for un_file in un_files:
+            if keep_unmapped==False:
+                to_delete = un_files
+                to_keep = []
+            else:
+                if paired_input:
+                    to_delete = un_files[:-2]
+                    to_keep = un_files[-2:]
+                else:
+                    to_delete = un_files[:-1]
+                    to_keep = un_files[-1:]
+            for un_file in to_delete:
                 if os.path.exists(un_file):
                     os.remove(un_file)
                     output_log.write("rm %s\n" % un_file)
                     if verbose:
                         print "rm %s" % un_file
-        
+            if len(to_keep)==1:
+                os.rename(to_keep[0], "%s.unmapped" % output)
+                biox.utils.gzip("%s.unmapped" % output)
+            elif len(to_keep)==2:
+                os.rename(to_keep[0], "%s.1.unmapped" % output)
+                os.rename(to_keep[1], "%s.2.unmapped" % output)
+                biox.utils.gzip("%s.1.unmapped" % output)
+                biox.utils.gzip("%s.2.unmapped" % output)
+                 
         # delete temp input files
         if type(input_decompressed)==list:
             for index, file in enumerate(input_decompressed):
