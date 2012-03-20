@@ -25,6 +25,7 @@ class Bowtie():
         self.m = 1
         self.u = False
         self.l = False
+        self.quality = "phread64-quals"
         self.strata = False
         self.enable_n()
         
@@ -116,6 +117,13 @@ class Bowtie():
     def enable_max(self, mx):
         self.max_enabled = mx
         
+    def set_quality(self, quality):
+        """
+        Set qualities of data from FASTQ. Possible options as in bowtie manual.
+        :param quality: "solexa-quals", "phred33-quals", "phred64-quals", "integer-quals"
+        """
+        self.quality = quality
+        
     def read_statfile(self, file):
         reads = mapped = 0
         f = open(file, "rt")
@@ -184,10 +192,10 @@ class Bowtie():
             output_par = "%s.sam" % output
             un_par = "--un "+output+".unmapped" if self.un_enabled else ""
             max_par = "--max "+output+".maxmulti" if self.max_enabled else ""
-            command = "{bowtie_exec} {strata_par} {l_par} -a {u_par} {processors} {un_par} {max_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
+            command = "{bowtie_exec} --{quality} {strata_par} {l_par} -a {u_par} {processors} {un_par} {max_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
             (bowtie_exec = self.bowtie_exec, fasta_par = fasta_par, index_par = index_par, input_par = input_par, output_par = output_par, \
             sam_par = sam_par, n_par = n_par, v_par = v_par, output_stats = stats_par, m_par = m_par, \
-            un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors, u_par = u_par, strata_par=strata_par, l_par = l_par)
+            un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors, u_par = u_par, strata_par=strata_par, l_par = l_par, quality = self.quality)
             output_log.write(command+"\n")
             if verbose:
                 print command            
@@ -243,10 +251,10 @@ class Bowtie():
                 max_par = "--max "+output+".trim%s.maxmulti" % trim3 if self.max_enabled else ""
                 trim3_par = "--trim3 %s" % trim3
                 output_par = output+".trim%s.sam" % trim3
-                command = "{bowtie_exec} {strata_par} {l_par} -a {u_par} {processors} --un {un_par} {max_par} {trim3_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
+                command = "{bowtie_exec} --{quality} {strata_par} {l_par} -a {u_par} {processors} --un {un_par} {max_par} {trim3_par} {n_par} {v_par} {sam_par} {m_par} {index_par} {fasta_par} {input_par} 1>{output_par} 2>{output_stats}".format \
                 (bowtie_exec = self.bowtie_exec, fasta_par = fasta_par, index_par = index_par, input_par = input_par, output_par = output_par, \
                 sam_par = sam_par, n_par = n_par, v_par = v_par, output_stats = stats_par, m_par = m_par, trim3_par = trim3_par, \
-                un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors, u_par = u_par, strata_par=strata_par, l_par = l_par)
+                un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors, u_par = u_par, strata_par=strata_par, l_par = l_par, quality = self.quality)
                 if verbose:
                     print command
                 if not simulate:
