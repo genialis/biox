@@ -76,3 +76,6 @@ class Gff3():
           for mRNA_id, mRNA_data in transcripts.items():
             for (CDS_start, CDS_stop) in mRNA_data["CDS"]:
               f.write("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (gene_chromosome, "", "CDS", CDS_start, CDS_stop, ".", gene_strand, ".", "gene_id \"%s\"; transcript_id \"%s\";" % (gene_id, mRNA_id)))
+
+    def return_genes(self):
+        pass

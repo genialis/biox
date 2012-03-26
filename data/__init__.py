@@ -10,6 +10,10 @@ from Fastq import *
 from Fasta import *
 from Bedgraph import *
 from Gff3 import *
+from Gtf import *
+from Gene import *
+from GeneFeature import *
+from Bam import *
 
 def fastq_qminmax(filename):
     """
