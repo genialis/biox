@@ -25,7 +25,7 @@ class Bowtie():
         self.m = 1
         self.u = False
         self.l = False
-        self.quality = "phread64-quals"
+        self.quality = "phred64-quals"
         self.strata = False
         self.enable_n()
         
@@ -146,11 +146,11 @@ class Bowtie():
         :param output: output folder
         :param index_path: specify full path to genome index, instead of using the indexes in biox.config.bowtie_index_folder folder
         :param verbose: Print each command that is executed (verbose mode)
-        :param simulate: Only simulate mappings and doens't execute any commands (together with verbose, prints out all the mapping commands)
+        :param simulate: Only simulate mappings and doesn't execute any commands (together with verbose, prints out all the mapping commands)
         """
         
+        executed_commands = []
         output_log = open("%s.log" % output, "wt")
-        
         paired_input = False
         
         if type(input)==list:
@@ -169,9 +169,9 @@ class Bowtie():
         u_par = "-u %s" % self.u if self.u!=False else ""
         n_par = "-n %s" % self.n if self.n!=False else ""
         v_par = "-v %s" % self.v if self.v!=False else ""
-        m_par = "-m %s" % self.m if self.m != None else ""
-        strata_par = "--strata --best" if self.strata !=None else ""
-        l_par = "-l %s" % self.l if self.l != None else ""
+        m_par = "-m %s" % self.m if self.m != False else ""
+        strata_par = "--strata --best" if self.strata !=False else ""
+        l_par = "-l %s" % self.l if self.l != False else ""
         fasta_par = "-f" if self.mode_fasta==True else ""
         index_par = pjoin(biox.bowtie_index_folder, index)
         if index_path!=None: # specify direct path to bowtie index
@@ -197,6 +197,7 @@ class Bowtie():
             sam_par = sam_par, n_par = n_par, v_par = v_par, output_stats = stats_par, m_par = m_par, \
             un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors, u_par = u_par, strata_par=strata_par, l_par = l_par, quality = self.quality)
             output_log.write(command+"\n")
+            executed_commands.append(command)
             if verbose:
                 print command            
             if not simulate:
@@ -212,6 +213,7 @@ class Bowtie():
                 if not simulate:
                     str, err = biox.utils.cmd(command)
                 output_log.write(command+"\n")   
+                executed_commands.append(command)
             if create_stats and not simulate:
                 stat_files.append(stats_par)
                 reads, mapped = self.read_statfile(stats_par)
@@ -260,6 +262,7 @@ class Bowtie():
                 if not simulate:
                     str, err = biox.utils.cmd(command)
                 output_log.write(command+"\n")
+                executed_commands.append(command)
                 sam_files.append(output_par)
                 if type(input_decompressed)==list:
                     if len(input_decompressed)==2:
@@ -273,6 +276,7 @@ class Bowtie():
                     bam_file = output_par[:-3]+"bam"
                     command = "{samtools_exec} view -F 4 {bam_unmapped_par} -bS {sam} > {bam}".format(samtools_exec = self.samtools_exec, sam = output_par, bam = bam_file, bam_unmapped_par = bam_unmapped_par)
                     output_log.write(command+"\n")
+                    executed_commands.append(command)
                     bam_files.append(output_par[:-3]+"bam")
                     if verbose:
                         print command                    
@@ -290,7 +294,8 @@ class Bowtie():
                     print command
                 if not simulate:
                     str, err = biox.utils.cmd(command)
-                output_log.write(command+"\n")                    
+                output_log.write(command+"\n") 
+                executed_commands.append(command)                
             # create trim statistics
             if create_stats and not simulate:
                 all_reads = 0
@@ -316,13 +321,15 @@ class Bowtie():
                 print command
             if not simulate:
                 str, err = biox.utils.cmd(command)
-            output_log.write(command+"\n")    
+            output_log.write(command+"\n")
+            executed_commands.append(command)
             command = "{samtools_exec} index {bam_sorted}".format(samtools_exec = self.samtools_exec, bam_sorted = bam_sorted+".bam")
             if verbose:
                 print command
             if not simulate:
                 str, err = biox.utils.cmd(command)
             output_log.write(command+"\n")
+            executed_commands.append(command)
             if not simulate:
                 if verbose:
                     print "mv %s %s\n" % (bam_sorted+".bam", output+".bam")
@@ -330,13 +337,19 @@ class Bowtie():
                 os.rename(bam_sorted+".bam", output+".bam")
                 os.rename(bam_sorted+".bam.bai", output+".bam.bai")
                 output_log.write("mv %s %s\n" % (bam_sorted+".bam", output+".bam"))
+                executed_commands.append("mv %s %s" % (bam_sorted+".bam", output+".bam"))
                 output_log.write("mv %s %s\n" % (bam_sorted+".bam.bai", output+".bam.bai"))
+                executed_commands.append("mv %s %s\n" % (bam_sorted+".bam.bai", output+".bam.bai"))
+                if verbose:
+                    print "mv %s %s\n" % (bam_sorted+".bam", output+".bam")
+                    print "mv %s %s\n" % (bam_sorted+".bam.bai", output+".bam.bai")
 
         if delete_temp and not simulate:
             for stat_file in stat_files:
                 if os.path.exists(stat_file):
                     os.remove(stat_file)
                     output_log.write("rm %s\n" % stat_file)
+                    executed_commands.append("rm %s" % stat_file)
                     if verbose:
                         print "rm %s" % stat_file
         if delete_temp and bam: # remove sam
@@ -344,15 +357,17 @@ class Bowtie():
                 if os.path.exists(sam_file):
                     os.remove(sam_file)
                     output_log.write("rm %s\n" % sam_file)
+                    executed_commands.append("rm %s" % sam_file)
                     if verbose:
                         print "rm %s" % sam_file
             for bam_file in bam_files:
                 if os.path.exists(bam_file):
                     os.remove(bam_file)
                     output_log.write("rm %s\n" % bam_file)
+                    executed_commands.append("rm %s" % bam_file)
                     if verbose:
                         print "rm %s" % bam_file
-        if delete_temp and self.un_enabled in [False, None]:
+        if delete_temp and self.un_enabled in [False, None] and simulate==False:
             if keep_unmapped==False:
                 to_delete = un_files
                 to_keep = []
@@ -367,16 +382,37 @@ class Bowtie():
                 if os.path.exists(un_file):
                     os.remove(un_file)
                     output_log.write("rm %s\n" % un_file)
+                    executed_commands.append("rm %s" % un_file)
                     if verbose:
                         print "rm %s" % un_file
             if len(to_keep)==1:
                 os.rename(to_keep[0], "%s.unmapped" % output)
+                output_log.write("mv %s %s\n" % (to_keep[0], "%s.unmapped" % output))
+                executed_commands.append("mv %s %s" % (to_keep[0], "%s.unmapped" % output))
                 biox.utils.gzip("%s.unmapped" % output)
+                output_log.write("gzip %s\n" % ("%s.unmapped" % output))
+                executed_commands.append("gzip %s" % ("%s.unmapped" % output))
+                if verbose:
+                    print "mv %s %s" % (to_keep[0], "%s.unmapped" % output)
+                    print "gzip %s" % ("%s.unmapped" % output)
             elif len(to_keep)==2:
                 os.rename(to_keep[0], "%s.1.unmapped" % output)
+                output_log.write("mv %s %s\n" % (to_keep[0], "%s.1.unmapped" % output))
+                executed_commands.append("mv %s %s" % (to_keep[0], "%s.1.unmapped" % output))
                 os.rename(to_keep[1], "%s.2.unmapped" % output)
+                output_log.write("mv %s %s\n" % (to_keep[1], "%s.2.unmapped" % output))
+                executed_commands.append("mv %s %s" % (to_keep[1], "%s.2.unmapped" % output))
                 biox.utils.gzip("%s.1.unmapped" % output)
+                output_log.write("rm %s\n" % ("%s.1.unmapped" % output))
+                executed_commands.append("rm %s" % ("%s.1.unmapped" % output))
                 biox.utils.gzip("%s.2.unmapped" % output)
+                output_log.write("rm %s\n" % ("%s.2.unmapped" % output))
+                executed_commands.append("rm %s" % ("%s.2.unmapped" % output))
+                if verbose:
+                    print "mv %s %s" % (to_keep[0], "%s.1.unmapped" % output)
+                    print "mv %s %s" % (to_keep[1], "%s.2.unmapped" % output)
+                    print "rm %s" % ("%s.1.unmapped" % output)
+                    print "rm %s" % ("%s.2.unmapped" % output)
                  
         # delete temp input files
         if type(input_decompressed)==list:
@@ -384,17 +420,25 @@ class Bowtie():
                 if input[index]!=file:
                     try:
                         os.remove(file)
+                        output_log.write("rm %s\n" % file)
+                        executed_commands.append("rm %s" % file)
+                        if verbose:
+                            print "rm %s" % file
                     except:
                         pass
         else:
             if input_decompressed!=input:
                 try:
                     os.remove(input_decompressed)
+                    output_log.write("rm %s\n" % input_decompressed)
+                    executed_commands.append("rm %s" % input_decompressed)
+                    if verbose:
+                        print "rm %s" % input_decompressed
                 except:
                     pass
                     
         output_log.close()
-        return True
+        return executed_commands
         
     def make_index(self, fasta, index_name):
         output = pjoin(biox.bowtie_index_folder, index_name)
