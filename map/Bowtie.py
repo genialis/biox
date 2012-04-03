@@ -310,8 +310,7 @@ class Bowtie():
                     f.write("%s\t%s\t%s\t%.2f%%\n" % (trim, locale.format("%d", reads.get(trim, 0), True), locale.format("%d", mapped.get(trim, 0), True), perc))
                     all_reads = max(all_reads, float(reads.get(trim, 0)))
                     mapped_reads += float(mapped.get(trim, 0))
-                f.write("all\t%s\t%s\t\n" % (locale.format("%d", all_reads, True), locale.format("%d", mapped_reads, True)))
-                f.write("all_perc\t100%%\t%.2f%%\t\n" % (mapped_reads/max(all_reads, 1) * 100))
+                f.write("all\t%s\t%s\t%.2f%%\n" % (locale.format("%d", all_reads, True), locale.format("%d", mapped_reads, True), (mapped_reads/max(all_reads, 1) * 100)))
                 f.close()
                 
         if bam: # sort and index bam file
