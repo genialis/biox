@@ -219,8 +219,8 @@ class Bowtie():
                 reads, mapped = self.read_statfile(stats_par)
                 stats_par_tab = "%s.stats.tab" % (output)
                 f = open(stats_par_tab, "wt")
-                f.write("reads processed\treads mapped\n")
-                f.write("%s\t%s\n" % (reads, mapped))
+                f.write("trim_size\treads_processed\treads_mapped\treads_mapped_perc\n")
+                f.write("0\t%s\t%s\t%.2f%%\n" % (reads, mapped, float(mapped)/reads))
                 f.close()
         else:
             reads = {}
