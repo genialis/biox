@@ -31,38 +31,14 @@ def fasta_check(filename, allowed_chars=["A", "C", "T", "G", "N"]):
     """
     Checks if FASTA file format is valid.
     """
-    valid_format = True
-    reason = "File is in FASTA format"
-    part = "id"
-    f = open(filename)
-    r = f.readline()
-    while r:
-        r = r.replace("\r", "").replace("\n", "")
-        if part=="sequence" and r.startswith(">"):
-            part = "id"
-        if part=="id" and not r.startswith(">"):
-            valid_format = False
-            reason = "No ID"
-            break
-        if part=="sequence" and r.startswith(">"):
-            valid_format = False
-            reason = "ID without sequence"
-            break
-        if part=="sequence":
-            r = r.upper()
-            seq_len = 0
-            for allowed in allowed_chars:
-                seq_len += r.count(allowed)
-            if seq_len != len(r):
-                valid_format = False
-                reason = "Sequence contains other characters than %s" % str(allowed_chars)
-                break
-        if part=="id" and r.startswith(">"):
-            part = "sequence"
-        if part=="sequence" and r=="":
-            valid_format = False
-        r = f.readline()
-    if part=="sequence" and r=="":
-        valid_format = False
-        reason = "ID without sequence"
-    return valid_format, reason
+    f = biox.data.Fasta(filename)
+    valid_fasta = True
+    while f.read():
+        seq_len = 0
+        if len(f.sequence)==0:
+            return False, "Sequence with ID %s has length 0" % (f.id)
+        for allowed in allowed_chars:
+            seq_len += f.sequence.upper().count(allowed)
+        if seq_len!=len(f.sequence):
+            return False, "Sequence with characters other than %s" % str(allowed_chars)
+    return True, "File in FASTA format"
