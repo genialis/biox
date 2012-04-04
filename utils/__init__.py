@@ -40,6 +40,6 @@ def gzip(source):
     Compress (gzip) input.
     """
     
-    command = "gzip %s" % (source)
+    command = "gzip -f %s" % (source)
     out, err = cmd(command)
     return source+".gz"

@@ -351,7 +351,7 @@ class Bowtie():
                     executed_commands.append("rm %s" % stat_file)
                     if verbose:
                         print "rm %s" % stat_file
-        if delete_temp and bam: # remove sam
+        if delete_temp and bam and not simulate: # remove sam
             for sam_file in sam_files:
                 if os.path.exists(sam_file):
                     os.remove(sam_file)
@@ -366,7 +366,7 @@ class Bowtie():
                     executed_commands.append("rm %s" % bam_file)
                     if verbose:
                         print "rm %s" % bam_file
-        if delete_temp and self.un_enabled in [False, None] and simulate==False:
+        if delete_temp and self.un_enabled in [False, None] and not simulate:
             if keep_unmapped==False:
                 to_delete = un_files
                 to_keep = []
@@ -385,15 +385,16 @@ class Bowtie():
                     if verbose:
                         print "rm %s" % un_file
             if len(to_keep)==1:
+                if verbose:
+                    print "mv %s %s" % (to_keep[0], "%s.unmapped" % output)
                 os.rename(to_keep[0], "%s.unmapped" % output)
                 output_log.write("mv %s %s\n" % (to_keep[0], "%s.unmapped" % output))
                 executed_commands.append("mv %s %s" % (to_keep[0], "%s.unmapped" % output))
+                if verbose:
+                    print "gzip %s" % ("%s.unmapped" % output)
                 biox.utils.gzip("%s.unmapped" % output)
                 output_log.write("gzip %s\n" % ("%s.unmapped" % output))
                 executed_commands.append("gzip %s" % ("%s.unmapped" % output))
-                if verbose:
-                    print "mv %s %s" % (to_keep[0], "%s.unmapped" % output)
-                    print "gzip %s" % ("%s.unmapped" % output)
             elif len(to_keep)==2:
                 os.rename(to_keep[0], "%s.1.unmapped" % output)
                 output_log.write("mv %s %s\n" % (to_keep[0], "%s.1.unmapped" % output))
@@ -443,5 +444,10 @@ class Bowtie():
         output = pjoin(biox.bowtie_index_folder, index_name)
         command = "{bowtie_build_exec} {fasta} {output}".format \
         (bowtie_build_exec = self.bowtie_build_exec, fasta = fasta, output = output)
+        print command
+        std, err = biox.utils.cmd(command)
+        # also make color index
+        command = "{bowtie_build_exec} --color {fasta} {output}".format \
+        (bowtie_build_exec = self.bowtie_build_exec, fasta = fasta, output = output+"_color")
         print command
         std, err = biox.utils.cmd(command)
