@@ -59,7 +59,7 @@ class Bowtie():
         """
         Enable mode v
         """
-        self.v = 2
+        self.v = v
         self.n = False
         
     def set_m(self, m):
@@ -173,9 +173,10 @@ class Bowtie():
         strata_par = "--strata --best" if self.strata !=False else ""
         l_par = "-l %s" % self.l if self.l != False else ""
         fasta_par = "-f" if self.mode_fasta==True else ""
-        index_par = pjoin(biox.bowtie_index_folder, index)
         if index_path!=None: # specify direct path to bowtie index
             index_par = index_path
+        else:
+            index_par = pjoin(biox.bowtie_index_folder, index)
         sam_files = []
         stat_files = []
         un_files = []
@@ -189,6 +190,8 @@ class Bowtie():
                     input_par = input_decompressed[0]
             else:
                 input_par = input_decompressed
+            if input_par.endswith(".fasta"):
+                input_par = "-f %s" % input_par
             output_par = "%s.sam" % output
             un_par = "--un "+output+".unmapped" if self.un_enabled else ""
             max_par = "--max "+output+".maxmulti" if self.max_enabled else ""
@@ -220,7 +223,7 @@ class Bowtie():
                 stats_par_tab = "%s.stats.tab" % (output)
                 f = open(stats_par_tab, "wt")
                 f.write("trim_size\treads_processed\treads_mapped\treads_mapped_perc\n")
-                f.write("0\t%s\t%s\t%.2f%%\n" % (reads, mapped, float(mapped)/reads))
+                f.write("0\t%s\t%s\t%.2f%%\n" % (reads, mapped, float(mapped)*100/reads))
                 f.close()
         else:
             reads = {}

@@ -9,6 +9,7 @@ import biox
 import data
 import map
 import utils
+import expression
 from config import *
 
 def gff3_from_fasta(fasta_file):
