@@ -1,6 +1,6 @@
 import biox
 
-def gene_expression(gtf_file, bam_file, genes = None):
+def gene_expression(gtf_file, bam_file, quality = 30, genes = None):
     result = {}
     gtf = biox.data.Gtf(gtf_file)
     for gene_id, gene in gtf.genes.items():
@@ -10,7 +10,7 @@ def gene_expression(gtf_file, bam_file, genes = None):
         for feature in gene.features:
             if feature.type!="exon":
                 continue
-            command = "samtools view -F 4 -q 30 %s %s:%s-%s" % (bam_file, gene.chr, feature.start, feature.stop)
+            command = "samtools view -F 4 -q {quality} {bam_file} {chr}:{start}-{stop}".format(bam_file = bam_file, chr = gene.chr, start = feature.start, stop = feature.stop, quality = quality)
             output, error = biox.utils.cmd(command)
             output = output.split("\n")
             for line in output:
