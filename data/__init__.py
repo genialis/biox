@@ -14,6 +14,10 @@ from Gtf import *
 from Gene import *
 from GeneFeature import *
 from Bam import *
+from Wig import *
+
+def overlaps(start_a, stop_a, start_b, stop_b):
+    return max(0, min(stop_a, stop_b) - max(start_a, start_b) + 1)
 
 def fastq_qminmax(filename):
     """
