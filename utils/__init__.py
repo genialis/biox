@@ -5,8 +5,8 @@ import gzip
 
 endings = [".gzip", ".gz", ".bz2"]
 
-def cmd(command):
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def cmd(command, shell=True):
+    process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, error = process.communicate()
     return output, error
     
