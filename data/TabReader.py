@@ -20,7 +20,7 @@ class TabReader():
             self.f.readline()
             header_at -= 1
         self.header = self.f.readline()
-        self.header = self.header..replace("\"", "").replace("\r", "").replace("\n", "").split("\t")
+        self.header = self.header.replace("\"", "").replace("\r", "").replace("\n", "").split("\t")
     
     def readline(self):
         line = self.f.readline()
