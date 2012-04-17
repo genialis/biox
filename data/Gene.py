@@ -13,6 +13,8 @@ class Gene():
     def add_feature(self, feature_new):
         if len(self.features)==0:
             self.features.append(feature_new)
+            self.start = feature_new.start
+            self.stop = feature_new.stop
             return True
         insert_at = 0
         for feature in self.features:
