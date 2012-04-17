@@ -4,6 +4,8 @@ import math
 def gene_expression(gtf_file, bam_file, quality = 30, genes = None):
     result = {}
     gtf = biox.data.Gtf(gtf_file)
+    all = len(gtf.genes.keys())
+    current = 0
     for gene_id, gene in gtf.genes.items():
         if genes!=None and gene_id not in genes:
             continue
@@ -38,4 +40,7 @@ def gene_expression(gtf_file, bam_file, quality = 30, genes = None):
                 if position in coding_positions:
                     raw_count += 1
         result[gene_id] = raw_count
+        current += 1
+        if current%10==0:
+            print "%.2f" % (float(current)*100/all)
     return result
