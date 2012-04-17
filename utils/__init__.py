@@ -9,6 +9,10 @@ def cmd(command, shell=True):
     process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, error = process.communicate()
     return output, error
+
+def cmd_pipe(command, shell=True):
+    process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return process.stdout
     
 def decompress(source, dest=None):
     """
