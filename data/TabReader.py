@@ -20,14 +20,13 @@ class TabReader():
             self.f.readline()
             header_at -= 1
         self.header = self.f.readline()
-        self.header = self.header.replace("\"", "")
-        self.header = self.header.rstrip("\r").replace("\n", "").replace("\t", "")
+        self.header = self.header..replace("\"", "").replace("\r", "").replace("\n", "").split("\t")
     
     def readline(self):
         line = self.f.readline()
         if not line:
             return False
-        line = line.rstrip("\r").rstrip("\n").split("\t")
+        line = line.replace("\r", "").replace("\n", "").split("\t")
         if not self.fast:
             for index, value in enumerate(line):
                 try:
