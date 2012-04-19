@@ -6,12 +6,15 @@ import gzip
 endings = [".gzip", ".gz", ".bz2"]
 
 def cmd(command, shell=True):
-    process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, executable='/bin/bash')
+    # -cl : this loads the path (loads .bashrc) for the user running the PIPAx wsgi daemon
+    process = subprocess.Popen(['/bin/bash', '-cl', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, error = process.communicate()
     return output, error
 
 def cmd_pipe(command, shell=True):
-    process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(['/bin/bash', '-cl', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return process.stdout
     
 def decompress(source, dest=None):

@@ -70,7 +70,7 @@ class Bedgraph():
         # replace original data with peak data
         self.data = data_peaks
 
-    def get_region(self, chr, strand, pos_from, pos_to):
+    def region(self, chr, strand, pos_from, pos_to):
         return sum([self.get_value(chr, strand, i) for i in xrange(pos_from, pos_to+1)])
         
     def get_region_max(self, chr, strand, pos_from, pos_to):
