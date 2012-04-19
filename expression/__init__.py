@@ -1,5 +1,6 @@
 import biox
 import math
+import os
 
 def gene_expression(gtf_file, bam_file, quality = 30, genes = None):
     gtf = biox.data.Gtf(gtf_file)
@@ -56,7 +57,15 @@ def bam_chromosomes(bam_file):
             chrs[line[1].split("SN:")[1]] = int(line[2].split("LN:")[1])
     return chrs
     
-def bam_coverage(bam_file, chr="chr1", strand=None, start=1, stop=None):
+def write_bam_chr(bam_file, chr_file):
+    chrs = bam_chromosomes(bam_file)
+    f = open(chr_file, "wt")
+    for chr, chr_len in chrs.items():
+        f.write("%s\t%s\n" % (chr, chr_len))
+    f.close()
+    return chr_file
+    
+def bam_coverage(bam_file, chr="chr1", strand=None, start=1, stop=None, position = '5prime'):
     if strand=="+":
         strand_par = "-F 0x0010"
     elif strand=="-":
@@ -76,11 +85,34 @@ def bam_coverage(bam_file, chr="chr1", strand=None, start=1, stop=None):
         line = line.split("\t")
         if len(line)>3:
             strand = "+" if int(line[1])==0 else "-"
-            pos = int(line[3]) if strand=="+" else int(line[3])+len(line[9])-1
-            if pos<start or pos>stop:
-                continue
-            result[pos] = result.setdefault(pos, 0) + 1
+            if position=='5prime':
+                pos = int(line[3]) if strand=="+" else int(line[3])+len(line[9])-1
+                if pos<start or pos>stop:
+                    continue
+                result[pos] = result.setdefault(pos, 0) + 1
+            if position=='span':
+                for pos in range(int(line[3]), int(line[3])+len(line[9])):
+                    if pos<start or pos>stop:
+                        continue                
+                    result[pos] = result.setdefault(pos, 0) + 1
     result_list = []
     for pos in range(start, stop+1):
         result_list.append(result.get(pos, 0))
     return result_list
+    
+def bam2wig(bam_file, wig_file, chr="chr1", strand=None, position = 'span', bigWig = True):
+    f = open(wig_file, "wt")
+    chrs = bam_chromosomes(bam_file)
+    for chr, chr_len in chrs.items():
+        f.write("variableStep chrom=%s span=1\n" % chr)
+        z = bam_coverage(bam_file, chr, strand = strand, position = position)
+        for pos, value in enumerate(z):
+            if value==0:
+                continue
+            f.write("%s\t%s\n" % (pos+1, value))
+    f.close()
+    bam_chrs = write_bam_chr(bam_file, wig_file+".chrs")
+    if bigWig:
+        command = "wigToBigWig %s %s %s" % (wig_file, bam_chrs, wig_file.replace(".wig", ".bw"))
+        output, error = biox.utils.cmd(command)
+    os.remove(bam_chrs)
