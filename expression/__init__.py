@@ -100,7 +100,7 @@ def bam_coverage(bam_file, chr="chr1", strand=None, start=1, stop=None, position
         result_list.append(result.get(pos, 0))
     return result_list
     
-def bam2wig(bam_file, wig_file, chr="chr1", strand=None, position = 'span', bigWig = True):
+def bam2wig(bam_file, wig_file, strand=None, position = 'span', bigWig = True):
     f = open(wig_file, "wt")
     chrs = bam_chromosomes(bam_file)
     for chr, chr_len in chrs.items():
@@ -115,4 +115,5 @@ def bam2wig(bam_file, wig_file, chr="chr1", strand=None, position = 'span', bigW
     if bigWig:
         command = "wigToBigWig %s %s %s" % (wig_file, bam_chrs, wig_file.replace(".wig", ".bw"))
         output, error = biox.utils.cmd(command)
+        os.remove(wig_file)
     os.remove(bam_chrs)
