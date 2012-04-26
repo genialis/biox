@@ -25,7 +25,7 @@ def gene_expression(gtf_file, bam_file, quality = 30, genes = None):
     for line in biox.utils.cmd_pipe(command):
         current += 1
         if current%200000==0:
-            print "%.2f" % (current/float(reads))
+            print "%.2f" % (current/float(reads)), bam_file
         line = line.split("\t")
         if len(line)>3:
             chr = line[2]
