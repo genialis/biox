@@ -1,10 +1,11 @@
 class Gene():
 
-    def __init__(self, id = None, chr = None, strand = None, name = None, alias = None):
+    def __init__(self, id = None, chr = None, strand = None, attrs = None, name = None, alias = None):
         self.id = id
         self.name = name
         self.chr = chr
         self.strand = strand
+        self.attrs = attrs
         self.alias = alias
         self.features = []
         self.start = ()

@@ -5,6 +5,18 @@ import gzip
 
 endings = [".gzip", ".gz", ".bz2"]
 
+class Cmd():
+
+    def __init__(self, command):
+        self.command = command
+        self.process = subprocess.Popen(['/bin/bash', '-cl', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.pid = self.process.pid
+        
+    def start(self):
+        output, error = self.process.communicate()
+        self.return_code = self.process.returncode
+        return output, error
+
 def cmd(command, shell=True):
     #process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, executable='/bin/bash')
     # -cl : this loads the path (loads .bashrc) for the user running the PIPAx wsgi daemon

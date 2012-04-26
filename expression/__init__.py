@@ -2,49 +2,44 @@ import biox
 import math
 import os
 
+def testBit(int_type, offset):
+   mask = 1 << offset
+   return(int_type & mask)
+
 def gene_expression(gtf_file, bam_file, quality = 30, genes = None):
     gtf = biox.data.Gtf(gtf_file)
-    all = len(gtf.genes.keys())
-    current = 0
-
-    position_2_gene = {}
-    for gene_id, gene in gtf.genes.items():
-        if genes!=None and gene_id not in genes:
-            continue
-        for feature in gene.features:
-            if feature.type!="exon":
-                continue
-            for pos in range(feature.start, feature.stop+1):
-                # present = position_2_gene.get("%s_%s" % (gene.chr, pos), None)
-                # if present!=None:
-                    # print present, gene_id
-                position_2_gene["%s_%s" % (gene.chr, pos)] = gene_id
+    genes_exp = {}
+    if genes==None:
+        for gene_id in gtf.genes:
+            genes_exp[gene_id] = 0
+    else:
+        for gene_id in genes:
+            genes_exp[gene_id] = 0
+            
+    command = "samtools view -F 4 -q {quality} -c {bam_file}".format(bam_file = bam_file, quality = 30)
+    output, error = biox.utils.cmd(command)
+    reads = int(output)            
     
-    genes_data = {}
-    for gene_id in gtf.genes.keys():
-        genes_data[gene_id] = 0
- 
-    command = "samtools view -F 4 -q {quality} -F 0x0010 {bam_file}".format(bam_file = bam_file, quality = quality)
+    command = "samtools view -F 4 -q {quality} {bam_file}".format(bam_file = bam_file, quality = quality)
+    current = 0
     for line in biox.utils.cmd_pipe(command):
+        current += 1
+        if current%200000==0:
+            print "%.2f" % (current/float(reads))
         line = line.split("\t")
         if len(line)>3:
-            pos = int(line[3])
             chr = line[2]
-            gene_id = position_2_gene.get("%s_%s" % (chr, pos), None)
-            if gene_id!=None:
-                genes_data[gene_id] = genes_data[gene_id] + 1
-
-    command = "samtools view -F 4 -q {quality} -f 0x0010 {bam_file}".format(bam_file = bam_file, quality = quality)
-    for line in biox.utils.cmd_pipe(command):
-        line = line.split("\t")
-        if len(line)>3:
+            flag = int(line[1])
             seq_len = len(line[9])
-            pos = int(line[3])+seq_len-1
-            chr = line[2]
-            gene_id = position_2_gene.get("%s_%s" % (chr, pos), None)
-            if gene_id!=None:
-                genes_data[gene_id] = genes_data[gene_id] + 1
-    return genes_data
+            strand = flag & 16 # is bit 5 set?
+            strand = "+" if strand==0 else "-"
+            pos = int(line[3]) if strand=="+" else int(line[3])+seq_len-1
+            position_genes = gtf.get_genes(chr, pos)
+            for gene_id in position_genes:
+                if genes!=None and gene_id not in genes:
+                    continue
+                genes_exp[gene_id] = genes_exp.get(gene_id, 0) + 1
+    return genes_exp
 
 def bam_chromosomes(bam_file):
     chrs = {}
@@ -64,6 +59,13 @@ def write_bam_chr(bam_file, chr_file):
         f.write("%s\t%s\n" % (chr, chr_len))
     f.close()
     return chr_file
+    
+def write_fasta_chr(fasta_file, chr_file):
+    fin = biox.data.Fasta(fasta_file)
+    f = open(chr_file, "wt")
+    while fin.read():
+        f.write("%s\t%s\n" % (fin.id, len(fin.sequence)))
+    f.close()
     
 def bam_coverage(bam_file, chr="chr1", strand=None, start=1, stop=None, position = '5prime'):
     if strand=="+":

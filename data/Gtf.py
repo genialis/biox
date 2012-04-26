@@ -1,11 +1,21 @@
 import biox
 import os
 import sys
+import cPickle
+
+cache_data = {}
+def cache_string(string):
+    if cache_data.get(string, None)==None:
+        cache_data[string] = string
+        return string
+    else:
+        return cache_data[string]
 
 class Gtf():
 
     def __init__(self, filename):
         self.genes = {}
+        self.filename = filename
         f = biox.data.TabReader(filename)
         while f.readline():
             chr = f.r[0]
@@ -21,13 +31,50 @@ class Gtf():
                 attrs[t[0]] = " ".join(t[1:])
             if attrs.get("gene_id", None)==None:
                 continue
-            gene = self.genes.get(attrs["gene_id"], biox.data.Gene(attrs["gene_id"], chr, strand))
+            gene = self.genes.get(attrs["gene_id"], biox.data.Gene(attrs["gene_id"], chr, strand, attrs=attrs))
             feature = biox.data.GeneFeature(start, stop, type, gene)
             gene.add_feature(feature)
             self.genes[gene.id] = gene
+            self.bin_size = 1000
+        self.load_index()
     
     def return_genes(self):
         return self.genes
+        
+    def load_index(self):
+        if not os.path.exists(self.filename+".pindex"):
+            pindex = {}
+            # create index of exons
+            c = 0
+            for gene_id, gene in self.genes.items():
+                c+=1
+                print c
+                pindex_chr = pindex.get(gene.chr, {})
+                for feature in gene.features:
+                    if feature.type!="exon":
+                        continue
+                    for pos in range(feature.start, feature.stop+1):
+                        bin = pos/self.bin_size
+                        GL = pindex_chr.get(bin, set())
+                        GL.add(cache_string(gene_id))
+                        pindex_chr[bin] = GL
+                pindex[gene.chr] = pindex_chr
+            cPickle.dump(pindex, open(self.filename+".pindex", "wb"), -1)
+            self.pindex = pindex
+        else:
+            self.pindex = cPickle.load(open(self.filename+".pindex"))
+    
+    def get_genes(self, chr, pos):
+        bin = pos/self.bin_size
+        candidate_genes = self.pindex.get(chr, {}).get(bin, [])
+        position_genes = set()
+        for gene_id in candidate_genes:
+            for feature in self.genes[gene_id].features:
+                if feature.type!="exon":
+                    continue
+                if feature.start<=pos<=feature.stop:
+                    position_genes.add(gene_id)
+        return position_genes
     
     def compute_overlap(self, start1, stop1, start2, stop2):
         if stop1 < start2 or stop2 < start1:
