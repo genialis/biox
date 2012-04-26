@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import gzip
+import biox
 
 #process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, executable='/bin/bash')
 # -cl : this loads the path (loads .bashrc) for the user running the PIPAx wsgi daemon
