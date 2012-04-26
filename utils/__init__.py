@@ -75,7 +75,7 @@ def gzip(source):
     
 def process_exists(pid, os="linux"):
     if os=="linux":
-        output, error = biox.utils.cmd("ps -p %s" % ticket.pid)
+        output, error = biox.utils.cmd("ps -p %s" % pid)
         output = output.split("\n")
         return len(output)>=3
     if os=="windows":
