@@ -62,7 +62,7 @@ class Gtf():
             cPickle.dump(pindex, open(self.filename+".pindex", "wb"), -1)
             self.pindex = pindex
         else:
-            self.pindex = cPickle.load(open(self.filename+".pindex"))
+            self.pindex = cPickle.load(open(self.filename+".pindex", "rb"))
     
     def get_genes(self, chr, pos):
         bin = pos/self.bin_size
