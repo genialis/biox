@@ -3,13 +3,19 @@ import sys
 import subprocess
 import gzip
 
+#process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, executable='/bin/bash')
+# -cl : this loads the path (loads .bashrc) for the user running the PIPAx wsgi daemon
+
 endings = [".gzip", ".gz", ".bz2"]
 
 class Cmd():
 
     def __init__(self, command):
         self.command = command
-        self.process = subprocess.Popen(['/bin/bash', '-cl', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if biox.os_shell!="":
+            self.process = subprocess.Popen(['/bin/bash', '-cl', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        else:
+            self.process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.pid = self.process.pid
         
     def start(self):
@@ -18,15 +24,18 @@ class Cmd():
         return output, error
 
 def cmd(command, shell=True):
-    #process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, executable='/bin/bash')
-    # -cl : this loads the path (loads .bashrc) for the user running the PIPAx wsgi daemon
-    process = subprocess.Popen(['/bin/bash', '-cl', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if biox.os_shell!="":
+        process = subprocess.Popen(['/bin/bash', '-cl', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    else:
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, error = process.communicate()
     return output, error
 
 def cmd_pipe(command, shell=True):
-    #process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    process = subprocess.Popen(['/bin/bash', '-cl', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if biox.os_shell!="":
+        process = subprocess.Popen(['/bin/bash', '-cl', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    else:
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return process.stdout
     
 def decompress(source, dest=None):
