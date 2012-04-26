@@ -72,3 +72,15 @@ def gzip(source):
     command = "gzip -f %s" % (source)
     out, err = cmd(command)
     return source+".gz"
+    
+def process_exists(pid, os="linux"):
+    if os=="linux":
+        output, error = biox.utils.cmd("ps -p %s" % ticket.pid)
+        output = output.split("\n")
+        return len(output)>=3
+    if os=="windows":
+        from win32com.client import GetObject
+        WMI = GetObject('winmgmts:')
+        processes = WMI.InstancesOf('Win32_Process')
+        plist = [process.Properties_('ProcessID').Value for process in processes]
+        return pid in plist
