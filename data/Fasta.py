@@ -74,9 +74,9 @@ class Fasta:
 
     def get_seq(self, chr, start, stop, reverse_complement=False):
         f = open(self.filename+".linear", "rb")
+        num_bytes = stop - start + 1
         pos_from = self.index[chr] + start - 1
-        pos_to = pos_from + stop
-        num_bytes = pos_to - pos_from
+        pos_to = pos_from + num_bytes
         f.seek(pos_from)
         seq = f.read(num_bytes)
         f.close()

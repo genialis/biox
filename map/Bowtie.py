@@ -23,8 +23,8 @@ class Bowtie():
         self.max_enabled = False
         self.mode_fasta = False
         self.m = 1
-        self.u = False
-        self.l = False
+        self.u = None
+        self.l = None
         self.quality = "phred64-quals"
         self.strata = False
         self.enable_n()
@@ -34,7 +34,7 @@ class Bowtie():
         Enable mode n of bowtie mapper.
         """
         self.n = n
-        self.v = False
+        self.v = None
         
     def set_l(self, l):
         """
@@ -60,7 +60,7 @@ class Bowtie():
         Enable mode v
         """
         self.v = v
-        self.n = False
+        self.n = None
         
     def set_m(self, m):
         """
@@ -144,8 +144,7 @@ class Bowtie():
         :param index: the name of the reference sequence index (dd/dp)
         :param input: full path to FASTA or FASTQ file with reads
         :param output: output folder
-        :param index_path: specify full path to genome index, instead of using the indexes in biox.config.bowtie_index_folder folder
-        :param verbose: Print each command that is executed (verbose mode)
+        :param index_path: specify full path to genome index, instead of using the indexes in biox.config.bowtie_index_folder folder        :param verbose: Print each command that is executed (verbose mode)
         :param simulate: Only simulate mappings and doesn't execute any commands (together with verbose, prints out all the mapping commands)
         """
         
@@ -166,12 +165,12 @@ class Bowtie():
        
         sam_par = "--sam" if self.sam else ""
         bam_unmapped_par = "-F 4" if bam_include_unmapped else ""
-        u_par = "-u %s" % self.u if self.u!=False else ""
-        n_par = "-n %s" % self.n if self.n!=False else ""
-        v_par = "-v %s" % self.v if self.v!=False else ""
-        m_par = "-m %s" % self.m if self.m != False else ""
-        strata_par = "--strata --best" if self.strata !=False else ""
-        l_par = "-l %s" % self.l if self.l != False else ""
+        u_par = "-u %s" % self.u if self.u != None else ""
+        n_par = "-n %s" % self.n if self.n != None else ""
+        v_par = "-v %s" % self.v if self.v != None else ""
+        m_par = "-m %s" % self.m if self.m != None else ""
+        strata_par = "--strata --best" if self.strata != False else ""
+        l_par = "-l %s" % self.l if self.l != None else ""
         fasta_par = "-f" if self.mode_fasta==True else ""
         if index_path!=None: # specify direct path to bowtie index
             index_par = index_path
@@ -202,7 +201,7 @@ class Bowtie():
             output_log.write(command+"\n")
             executed_commands.append(command)
             if verbose:
-                print command            
+                print command
             if not simulate:
                 str, err = biox.utils.cmd(command)
             sam_files.append(output_par)
