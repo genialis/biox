@@ -4,9 +4,53 @@ import subprocess
 import gzip
 import biox
 
+def merge_ints(ints):
+
+    def take_next(ints):
+        to_return = ints[0]
+        del ints[0]
+        return to_return      
+        
+    def add_new(ints, (start, stop)):
+        if len(ints)==0:
+            ints.append((start, stop))
+            return
+        (start_0, stop_0) = ints[-1]
+        if start_0 <= start <= stop_0:
+            del ints[-1]
+            ints.append((start_0, max(stop_0, stop)))
+        else:
+            ints.append((start, stop))
+            
+    ints.sort()
+    ints_merged = []            
+    while len(ints)>0:
+        (start, stop) = take_next(ints)
+        add_new(ints_merged, (start, stop))
+    ints_merged.sort()
+    return ints_merged
+
+    # ints = [(1,5), (6,10)]
+    # assert(join_overlapping(ints)==[(1,5), (6,10)])
+
+    # ints = [(6,10), (1,5)]
+    # assert(join_overlapping(ints)==[(1,5), (6,10)])
+
+    # ints = [(1,5), (2,6)]
+    # assert(join_overlapping(ints)==[(1,6)])
+
+    # ints = [(2,6), (1,5)]
+    # assert(join_overlapping(ints)==[(1,6)])
+
+    # ints = [(1,5), (1,5)]
+    # assert(join_overlapping(ints)==[(1,5)])
+
+    # ints = [(1,5), (1,5)]
+    # assert(join_overlapping(ints)==[(1,5)])
+
+
 #process = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, executable='/bin/bash')
 # -cl : this loads the path (loads .bashrc) for the user running the PIPAx wsgi daemon
-
 endings = [".gzip", ".gz", ".bz2"]
 
 class Cmd():

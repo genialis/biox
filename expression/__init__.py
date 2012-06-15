@@ -6,6 +6,33 @@ def testBit(int_type, offset):
    mask = 1 << offset
    return(int_type & mask)
 
+def gene_expression_overlap(gtf_file, bam_file, quality = 30, genes = None):
+    gtf = biox.data.Gtf(gtf_file)
+    genes_exp = {}
+    if genes==None:
+        for gene_id in gtf.genes:
+            genes_exp[gene_id] = 0
+    else:
+        for gene_id in genes:
+            genes_exp[gene_id] = 0
+            
+    current = 0
+    for gene_id, gene in gtf.genes.items():
+        current += 1
+        if current%300==0:
+            print "%.2f" % (float(current)/len(gtf.genes)), bam_file
+        if genes!=None and gene.id not in genes:
+            continue
+        for feature in gene.features:
+            if feature.type!="exon":
+                continue
+            assert(feature.start<=feature.stop)
+            command = "samtools view -F 4 -q {quality} -c {bam_file} {chr}:{start}-{stop}".format(bam_file = bam_file, quality = 30, chr=gene.chr, start=feature.start, stop=feature.stop)
+            output, error = biox.utils.cmd(command)
+            if output!="":
+                genes_exp[gene_id] = genes_exp.get(gene_id, 0) + int(output)
+    return genes_exp
+   
 def gene_expression(gtf_file, bam_file, quality = 30, genes = None):
     gtf = biox.data.Gtf(gtf_file)
     genes_exp = {}
