@@ -85,7 +85,6 @@ class Bowtie():
         Enable fasta mode.
         """
         self.mode_fasta = True
-        self.enable_v()
 
     def set_mode_fastq(self):
         """
@@ -170,8 +169,8 @@ class Bowtie():
         v_par = "-v %s" % self.v if self.v != None else ""
         m_par = "-m %s" % self.m if self.m != None else ""
         strata_par = "--strata --best" if self.strata != False else ""
-        l_par = "-l %s" % self.l if self.l != None else ""
         fasta_par = "-f" if self.mode_fasta==True else ""
+        l_par = "-l %s" % self.l if self.l != None else ""
         if index_path!=None: # specify direct path to bowtie index
             index_par = index_path
         else:
@@ -189,8 +188,8 @@ class Bowtie():
                     input_par = input_decompressed[0]
             else:
                 input_par = input_decompressed
-            if input_par.endswith(".fasta"):
-                input_par = "-f %s" % input_par
+                if input_decompressed.endswith(".fasta"):
+                    self.set_mode_fasta()
             output_par = "%s.sam" % output
             un_par = "--un "+output+".unmapped" if self.un_enabled else ""
             max_par = "--max "+output+".maxmulti" if self.max_enabled else ""
@@ -251,7 +250,9 @@ class Bowtie():
                 # eg.: output.trim0.unmapped -> output.trim0_1.unmapped, output.trim0_2.unmapped
                 # instead of output.trim0.unmapped_1, output.trim0.unmapped_2
                 un_par = output+"_trim%s_unmapped" % trim3
-                    
+
+                fasta_par = "-f" if self.mode_fasta==True else ""
+                
                 max_par = "--max "+output+".trim%s.maxmulti" % trim3 if self.max_enabled else ""
                 trim3_par = "--trim3 %s" % trim3
                 output_par = output+".trim%s.sam" % trim3
@@ -387,34 +388,36 @@ class Bowtie():
                     if verbose:
                         print "rm %s" % un_file
             if len(to_keep)==1:
-                if verbose:
-                    print "mv %s %s" % (to_keep[0], "%s.unmapped" % output)
-                os.rename(to_keep[0], "%s.unmapped" % output)
-                output_log.write("mv %s %s\n" % (to_keep[0], "%s.unmapped" % output))
-                executed_commands.append("mv %s %s" % (to_keep[0], "%s.unmapped" % output))
-                if verbose:
-                    print "gzip %s" % ("%s.unmapped" % output)
-                biox.utils.gzip("%s.unmapped" % output)
-                output_log.write("gzip %s\n" % ("%s.unmapped" % output))
-                executed_commands.append("gzip %s" % ("%s.unmapped" % output))
+                if os.path.exists(to_keep[0]):
+                    if verbose:
+                        print "mv %s %s" % (to_keep[0], "%s.unmapped" % output)
+                    os.rename(to_keep[0], "%s.unmapped" % output)
+                    output_log.write("mv %s %s\n" % (to_keep[0], "%s.unmapped" % output))
+                    executed_commands.append("mv %s %s" % (to_keep[0], "%s.unmapped" % output))
+                    if verbose:
+                        print "gzip %s" % ("%s.unmapped" % output)
+                    biox.utils.gzip("%s.unmapped" % output)
+                    output_log.write("gzip %s\n" % ("%s.unmapped" % output))
+                    executed_commands.append("gzip %s" % ("%s.unmapped" % output))
             elif len(to_keep)==2:
-                os.rename(to_keep[0], "%s.1.unmapped" % output)
-                output_log.write("mv %s %s\n" % (to_keep[0], "%s.1.unmapped" % output))
-                executed_commands.append("mv %s %s" % (to_keep[0], "%s.1.unmapped" % output))
-                os.rename(to_keep[1], "%s.2.unmapped" % output)
-                output_log.write("mv %s %s\n" % (to_keep[1], "%s.2.unmapped" % output))
-                executed_commands.append("mv %s %s" % (to_keep[1], "%s.2.unmapped" % output))
-                biox.utils.gzip("%s.1.unmapped" % output)
-                output_log.write("rm %s\n" % ("%s.1.unmapped" % output))
-                executed_commands.append("rm %s" % ("%s.1.unmapped" % output))
-                biox.utils.gzip("%s.2.unmapped" % output)
-                output_log.write("rm %s\n" % ("%s.2.unmapped" % output))
-                executed_commands.append("rm %s" % ("%s.2.unmapped" % output))
-                if verbose:
-                    print "mv %s %s" % (to_keep[0], "%s.1.unmapped" % output)
-                    print "mv %s %s" % (to_keep[1], "%s.2.unmapped" % output)
-                    print "rm %s" % ("%s.1.unmapped" % output)
-                    print "rm %s" % ("%s.2.unmapped" % output)
+                if os.path.exists(to_keep[0]) and os.path.exists(to_keep[1]):
+                    os.rename(to_keep[0], "%s.1.unmapped" % output)
+                    output_log.write("mv %s %s\n" % (to_keep[0], "%s.1.unmapped" % output))
+                    executed_commands.append("mv %s %s" % (to_keep[0], "%s.1.unmapped" % output))
+                    os.rename(to_keep[1], "%s.2.unmapped" % output)
+                    output_log.write("mv %s %s\n" % (to_keep[1], "%s.2.unmapped" % output))
+                    executed_commands.append("mv %s %s" % (to_keep[1], "%s.2.unmapped" % output))
+                    biox.utils.gzip("%s.1.unmapped" % output)
+                    output_log.write("rm %s\n" % ("%s.1.unmapped" % output))
+                    executed_commands.append("rm %s" % ("%s.1.unmapped" % output))
+                    biox.utils.gzip("%s.2.unmapped" % output)
+                    output_log.write("rm %s\n" % ("%s.2.unmapped" % output))
+                    executed_commands.append("rm %s" % ("%s.2.unmapped" % output))
+                    if verbose:
+                        print "mv %s %s" % (to_keep[0], "%s.1.unmapped" % output)
+                        print "mv %s %s" % (to_keep[1], "%s.2.unmapped" % output)
+                        print "rm %s" % ("%s.1.unmapped" % output)
+                        print "rm %s" % ("%s.2.unmapped" % output)
                  
         # delete temp input files
         if type(input_decompressed)==list:

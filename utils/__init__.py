@@ -128,3 +128,6 @@ def process_exists(pid, os="linux"):
         processes = WMI.InstancesOf('Win32_Process')
         plist = [process.Properties_('ProcessID').Value for process in processes]
         return pid in plist
+
+def web_2_txt(string):
+    return string.replace("\"", "").replace("'", "").replace("%2C", ",").replace("%2F", "/").replace("%3C", "<").replace("%3D", "=").replace("%3E", ">").replace("%22", "\"").replace("%2B", "+").replace("%3B", ";").replace("%0A", "").replace("%25", "%").replace("%27", "'").replace("%28", "(").replace("%29", ")").replace("%26", "&").replace("%09", "").replace("%23", "#")

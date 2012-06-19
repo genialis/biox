@@ -62,12 +62,12 @@ def prepare_fasta_gbrowse(filename):
         f_gff3.write("\t".join(str(x) for x in row) + "\n")
     f_gff3.close()
     
-def prepare_fasta_mapability(input, output, L = 35):
+def prepare_fasta_mapability(input, output, seq_len):
     f_output = open(output, "wt")
     id_seq = 1
     f_input = biox.data.Fasta(input)
     while f_input.read():
-      for i in xrange(0, len(f_input.sequence)-L):
-        f_output.write(">%s\n%s\n" % (id_seq, f_input.sequence[i:i+L]))
+      for i in xrange(0, len(f_input.sequence)-seq_len):
+        f_output.write(">%s\n%s\n" % (id_seq, f_input.sequence[i:i+seq_len]))
         id_seq += 1
     f_output.close()
