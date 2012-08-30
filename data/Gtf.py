@@ -14,6 +14,7 @@ def cache_string(string):
 class Gtf():
 
     def __init__(self, filename):
+        self.bin_size = 1000
         self.genes = {}
         self.filename = filename
         f = biox.data.TabReader(filename)
@@ -35,7 +36,6 @@ class Gtf():
             feature = biox.data.GeneFeature(start, stop, type, gene)
             gene.add_feature(feature)
             self.genes[gene.id] = gene
-            self.bin_size = 1000
         self.load_index()
     
     def return_genes(self):
@@ -44,11 +44,7 @@ class Gtf():
     def load_index(self):
         if not os.path.exists(self.filename+".pindex"):
             pindex = {}
-            # create index of exons
-            c = 0
             for gene_id, gene in self.genes.items():
-                c+=1
-                print c
                 pindex_chr = pindex.get(gene.chr, {})
                 for feature in gene.features:
                     if feature.type!="exon":
@@ -76,12 +72,6 @@ class Gtf():
                     position_genes.add(gene_id)
         return position_genes
     
-    def compute_overlap(self, start1, stop1, start2, stop2):
-        if stop1 < start2 or stop2 < start1:
-            return 0
-        else:        
-            return max(0, min(stop1, stop2) - max(start1, start2)) + 1
-    
     def find_overlap(self, gene_source):
         """
         Return overlapping feature to given feature
@@ -90,7 +80,7 @@ class Gtf():
         for gene_id, gene in self.genes.iteritems():
             if gene.strand != gene_source.strand or gene.chr != gene_source.chr:
                 continue
-            overlap = self.compute_overlap(gene.start, gene.stop, gene_source.start, gene_source.stop)
+            overlap = biox.utils.interval_overlap(gene.start, gene.stop, gene_source.start, gene_source.stop)
             if overlap>0:
                 overlapping_genes.append((overlap, gene))
         return overlapping_genes
@@ -98,11 +88,16 @@ class Gtf():
     def write_gff3(self, filename):
         f = open(filename, "wt")
         for gene_id, gene in self.genes.iteritems():
-            row = [gene.chr, "biox", "gene", gene.start, gene.stop, "", gene.strand, ".", "ID=%s" % gene_id] # gene
+            row = [gene.chr, "biox", "gene", gene.start, gene.stop, "", gene.strand, ".", "ID=%s;Name=%s" % (gene_id, gene_id)] # gene
             f.write("\t".join(str(x) for x in row) + "\n")
             row = [gene.chr, "biox", "mRNA", gene.start, gene.stop, "", gene.strand, ".", "ID=%s.t1;Parent=%s" % (gene_id, gene_id)] # mRNA
             f.write("\t".join(str(x) for x in row) + "\n")
-            for feature in gene.features:
+            for exon_index, feature in enumerate(gene.features):
+                if feature.type not in ["exon", "CDS"]:
+                    continue
                 row = [gene.chr, "biox", "CDS", feature.start, feature.stop, "", gene.strand, ".", "ID=%s.t1.cds;Parent=%s.t1" % (gene_id, gene_id)] # mRNA
                 f.write("\t".join(str(x) for x in row) + "\n")
+                row = [gene.chr, "biox", "exon", feature.start, feature.stop, "", gene.strand, ".", "ID=%s.t1.exon%s;Parent=%s.t1" % (gene_id, exon_index+1, gene_id)] # mRNA
+                f.write("\t".join(str(x) for x in row) + "\n")
+            f.write("\n")
         f.close()

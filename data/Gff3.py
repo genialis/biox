@@ -23,6 +23,9 @@ class Gff3():
             l+=1
             continue
           r = r.rstrip("\r\n").split("\t")
+          if len(r)==1:
+            r = f.readline()
+            continue
           if r[0]=="##gff-version   3":
             fasta_part = 0
             r = f.readline()

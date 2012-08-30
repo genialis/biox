@@ -4,6 +4,12 @@ import subprocess
 import gzip
 import biox
 
+def compute_overlap(self, start1, stop1, start2, stop2):
+    if stop1 < start2 or stop2 < start1:
+        return 0
+    else:        
+        return max(0, min(stop1, stop2) - max(start1, start2)) + 1
+
 def merge_ints(ints):
 
     def take_next(ints):
