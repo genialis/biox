@@ -11,6 +11,7 @@ import map
 import utils
 import expression
 from config import *
+import math
 
 def gff3_from_fasta(fasta_file):
     f = biox.data.Fasta(fasta_file)
