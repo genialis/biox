@@ -66,7 +66,7 @@ def gene_expression(gtf_file, bam_file, quality = 30, genes = None):
         for gene_id in genes:
             genes_exp[gene_id] = 0
             
-    command = "samtools view -F 4 -q {quality} -c {bam_file}".format(bam_file = bam_file, quality = 30)
+    command = "samtools view -F 4 -q {quality} -c {bam_file}".format(bam_file = bam_file, quality = quality)
     output, error = biox.utils.cmd(command)
     reads = int(output)            
     
@@ -90,6 +90,41 @@ def gene_expression(gtf_file, bam_file, quality = 30, genes = None):
                     continue
                 genes_exp[gene_id] = genes_exp.get(gene_id, 0) + 1
     return genes_exp
+    
+def gene_expression_promoters(gtf_file, bam_file, quality = 30, genes = None):
+    gtf = biox.data.Gtf(gtf_file)
+    genes_exp = {}
+    if genes==None:
+        for gene_id in gtf.genes:
+            genes_exp[gene_id] = 0
+    else:
+        for gene_id in genes:
+            genes_exp[gene_id] = 0
+            
+    command = "samtools view -F 4 -q {quality} -c {bam_file}".format(bam_file = bam_file, quality = quality)
+    output, error = biox.utils.cmd(command)
+    reads = int(output)            
+    
+    command = "samtools view -F 4 -q {quality} {bam_file}".format(bam_file = bam_file, quality = quality)
+    current = 0
+    for line in biox.utils.cmd_pipe(command):
+        current += 1
+        if current%200000==0:
+            print "%.2f" % (current/float(reads)), bam_file
+        line = line.split("\t")
+        if len(line)>3:
+            chr = line[2]
+            flag = int(line[1])
+            seq_len = len(line[9])
+            strand = flag & 16 # is bit 5 set?
+            strand = "+" if strand==0 else "-"
+            pos = int(line[3]) if strand=="+" else int(line[3])+seq_len-1
+            position_genes = gtf.get_genes(chr, pos)
+            for gene_id in position_genes:
+                if genes!=None and gene_id not in genes:
+                    continue
+                genes_exp[gene_id] = genes_exp.get(gene_id, 0) + 1
+    return genes_exp    
 
 def bam_chromosomes(bam_file):
     chrs = {}
