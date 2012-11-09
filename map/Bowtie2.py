@@ -4,7 +4,7 @@ import os
 import sys
 import locale
 
-locale.setlocale(locale.LC_ALL, '')
+#locale.setlocale(locale.LC_ALL, '')
 
 class Bowtie2():
 
