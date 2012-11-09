@@ -4,7 +4,7 @@ import subprocess
 import gzip
 import biox
 
-def compute_overlap(self, start1, stop1, start2, stop2):
+def interval_overlap(start1, stop1, start2, stop2):
     if stop1 < start2 or stop2 < start1:
         return 0
     else:        
