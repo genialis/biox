@@ -187,20 +187,19 @@ def bam_coverage(bam_file, chr="chr1", strand=None, start=1, stop=None, position
         result_list.append(result.get(pos, 0))
     return result_list
     
-def bam2wig(bam_file, wig_file, strand=None, position = 'span', bigWig = True):
-    f = open(wig_file, "wt")
-    chrs = bam_chromosomes(bam_file)
-    for chr, chr_len in chrs.items():
-        f.write("variableStep chrom=%s span=1\n" % chr)
-        z = bam_coverage(bam_file, chr, strand = strand, position = position)
-        for pos, value in enumerate(z):
-            if value==0:
-                continue
-            f.write("%s\t%s\n" % (pos+1, value))
-    f.close()
-    bam_chrs = write_bam_chr(bam_file, wig_file+".chrs")
-    if bigWig:
-        command = "wigToBigWig %s %s %s" % (wig_file, bam_chrs, wig_file.replace(".wig", ".bw"))
-        output, error = biox.utils.cmd(command)
-        os.remove(wig_file)
-    os.remove(bam_chrs)
+def bam2wig(bam_filename, bw_filename, strand=None, position='span', scale=None):
+"""
+All that is required to make a BigWig from a Bam is the bam file itself (with the header)
+"""
+    strand_dic = {1:'+', -1:'-', '1':'+', '-1':'-'}
+    chrs_filename = bam_filename+".chrs"
+    bed_filename = bw_filename+".bed"
+    write_bam_chr(bam_filename, chrs_filename)
+    strand_parameter = "-strand %s" % strand_dic[strand] if strand!=None else ''
+    scale_parameter = "-scale %.5f" % (1/float(scale)) if scale!=None else ''
+    command = "genomeCoverageBed -bg -ibam {bam_filename} -g {chrs_filename} {strand_parameter} {scale_parameter} > {bed_filename}".format(bam_filename=bam_filename, chrs_filename=chrs_filename, strand_parameter=strand_parameter, scale_parameter=scale_parameter, bed_filename=bed_filename)
+    output, error = biox.utils.cmd(command)
+    command = "bedGraphToBigWig {bed_filename} {chrs_filename} {bw_filename}".format(bed_filename=bed_filename, chrs_filename=chrs_filename, bw_filename=bw_filename)
+    output, error = biox.utils.cmd(command)
+    os.remove(bed_filename)
+    os.remove(chrs_filename)
