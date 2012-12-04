@@ -21,7 +21,7 @@ def region_expression_pileup(sam_filename, chr, start, stop):
     for rec in f.pileup(chr, start, stop):
         if not start<=rec.pos<=stop:
             continue
-        sum += rec.n    
+        sum += rec.n
     return round(sum/float(stop-start+1))
    
 def gene_expression_overlap(gtf_file, bam_file, quality = 30, genes = None):
