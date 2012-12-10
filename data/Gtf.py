@@ -20,20 +20,21 @@ class Gtf():
         f = biox.data.TabReader(filename)
         while f.readline():
             chr = f.r[0]
-            type = f.r[2]
+            gene_type = f.r[2]
             start = int(f.r[3])
             stop = int(f.r[4])
             strand = f.r[6]
             attrs = {}
-            temp = f.r[-1].split("; ")
-            for t in temp:
-                t = t.replace(";", "")
-                t = t.split(" ")
-                attrs[t[0]] = " ".join(t[1:])
+            temp = f.r[-1].split(";")
+            for att in temp:
+                att = att.replace("\"", "")
+                att = att.lstrip(" ")
+                att = att.split(" ")
+                attrs[att[0]] = " ".join(att[1:])
             if attrs.get("gene_id", None)==None:
                 continue
             gene = self.genes.get(attrs["gene_id"], biox.data.Gene(attrs["gene_id"], chr, strand, attrs=attrs))
-            feature = biox.data.GeneFeature(start, stop, type, gene)
+            feature = biox.data.GeneFeature(start, stop, gene_type, gene)
             gene.add_feature(feature)
             self.genes[gene.id] = gene
         self.load_index()

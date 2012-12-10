@@ -186,17 +186,15 @@ def bam_coverage(bam_file, chr="chr1", strand=None, start=1, stop=None, position
     for pos in range(start, stop+1):
         result_list.append(result.get(pos, 0))
     return result_list
-    
+
+# All that is required to make a BigWig from a Bam is the bam file itself (with the header)
 def bam2wig(bam_filename, bw_filename, strand=None, position='span', scale=None):
-"""
-All that is required to make a BigWig from a Bam is the bam file itself (with the header)
-"""
-    strand_dic = {1:'+', -1:'-', '1':'+', '-1':'-'}
+    strand_dic = {1:'+', -1:'-', '1':'+', '-1':'-', '+': '+', '-': '-'}
     chrs_filename = bam_filename+".chrs"
     bed_filename = bw_filename+".bed"
     write_bam_chr(bam_filename, chrs_filename)
     strand_parameter = "-strand %s" % strand_dic[strand] if strand!=None else ''
-    scale_parameter = "-scale %.5f" % (1/float(scale)) if scale!=None else ''
+    scale_parameter = "-scale %.5f" % float(scale) if scale!=None else '' # values are multiplied (*) by scale
     command = "genomeCoverageBed -bg -ibam {bam_filename} -g {chrs_filename} {strand_parameter} {scale_parameter} > {bed_filename}".format(bam_filename=bam_filename, chrs_filename=chrs_filename, strand_parameter=strand_parameter, scale_parameter=scale_parameter, bed_filename=bed_filename)
     output, error = biox.utils.cmd(command)
     command = "bedGraphToBigWig {bed_filename} {chrs_filename} {bw_filename}".format(bed_filename=bed_filename, chrs_filename=chrs_filename, bw_filename=bw_filename)
