@@ -201,3 +201,10 @@ def bam2wig(bam_filename, bw_filename, strand=None, position='span', scale=None)
     output, error = biox.utils.cmd(command)
     os.remove(bed_filename)
     os.remove(chrs_filename)
+
+def bam_statistics(bam_filename):
+	stats = pysam.idxstats(bam_filename)
+	del stats[-1] # * 0 0 0 0 ...?
+	mapped_reads = sum([int(el.split("\t")[2]) for el in stats])
+	notmapped_reads = sum([int(el.split("\t")[3]) for el in stats])
+	return {'mapped':mapped_reads, 'notmapped':notmapped_reads, 'all':mapped_reads+notmapped_reads}
