@@ -1,0 +1,11 @@
+#!/usr/bin/python
+
+import sys
+import biox
+filename = sys.argv[1]
+f = biox.data.Fasta(filename)
+while f.read():
+    print f.id
+    fout = open("%s.string" % f.id, "wt")
+    fout.write(f.sequence)
+    fout.close()
