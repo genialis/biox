@@ -182,6 +182,11 @@ def bam_coverage(bam_file, chr="chr1", strand=None, start=1, stop=None, position
                     if pos<start or pos>stop:
                         continue                
                     result[pos] = result.setdefault(pos, 0) + 1
+            if position=='span_coverage':
+                for pos in range(int(line[3]), int(line[3])+len(line[9])):
+                    if pos<start or pos>stop:
+                        continue                
+                    result[pos] = 1                    
     result_list = []
     for pos in range(start, stop+1):
         result_list.append(result.get(pos, 0))

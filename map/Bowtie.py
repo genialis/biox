@@ -25,6 +25,7 @@ class Bowtie():
         self.m = 1
         self.u = None
         self.l = None
+        self.X = 1000
         self.quality = "phred64-quals"
         self.strata = False
         self.enable_n()
@@ -35,6 +36,9 @@ class Bowtie():
         """
         self.n = n
         self.v = None
+        
+    def set_X(self, X):
+        self.X = X
         
     def set_l(self, l):
         """
@@ -128,6 +132,7 @@ class Bowtie():
         f = open(file, "rt")
         r = f.readline()
         while r:
+            print r
             r = r.rstrip("\r").rstrip("\n")
             if r.startswith("# reads processed: "):
                 reads = int(r.split("# reads processed: ")[1])
@@ -143,7 +148,8 @@ class Bowtie():
         :param index: the name of the reference sequence index (dd/dp)
         :param input: full path to FASTA or FASTQ file with reads
         :param output: output folder
-        :param index_path: specify full path to genome index, instead of using the indexes in biox.config.bowtie_index_folder folder        :param verbose: Print each command that is executed (verbose mode)
+        :param index_path: specify full path to genome index, instead of using the indexes in biox.config.bowtie_index_folder folder
+        :param verbose: Print each command that is executed (verbose mode)
         :param simulate: Only simulate mappings and doesn't execute any commands (together with verbose, prints out all the mapping commands)
         """
         
@@ -155,8 +161,8 @@ class Bowtie():
             if len(input)==2:
                 paired_input = True
                 input_decompressed = []
-                input_decompressed[0] = biox.utils.decompress(input[0])
-                input_decompressed[1] = biox.utils.decompress(input[1])
+                input_decompressed.append(biox.utils.decompress(input[0]))
+                input_decompressed.append(biox.utils.decompress(input[1]))
             else:
                 input_decompressed = biox.utils.decompress(input[0])
         else:
@@ -183,7 +189,7 @@ class Bowtie():
             stats_par = "%s.stats" % (output) if create_stats else "/dev/null" 
             if type(input_decompressed)==list:
                 if len(input_decompressed)==2:
-                    input_par = "-1 %s -2 %s" % (input_decompressed[0], input_decompressed[1])
+                    input_par = "-1 %s -2 %s -X %s" % (input_decompressed[0], input_decompressed[1], self.X)
                 else:
                     input_par = input_decompressed[0]
             else:
@@ -218,6 +224,7 @@ class Bowtie():
             if create_stats and not simulate:
                 stat_files.append(stats_par)
                 reads, mapped = self.read_statfile(stats_par)
+                print reads,mapped
                 stats_par_tab = "%s.stats.tab" % (output)
                 f = open(stats_par_tab, "wt")
                 f.write("trim_size\treads_processed\treads_mapped\treads_mapped_perc\n")

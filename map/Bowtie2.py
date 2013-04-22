@@ -23,6 +23,7 @@ class Bowtie2():
         self.quality = "phred64-quals"
         self.mode_par = "--very-fast-local"
         self.u = None
+        self.X = 1000
         
     def enable_u(self, u):
         """
@@ -35,6 +36,9 @@ class Bowtie2():
         Set number of processors to use.
         """
         self.processors = processors
+        
+    def set_X(self, X):
+        self.X = X
         
     def set_mode_fasta(self):
         """
@@ -85,9 +89,7 @@ class Bowtie2():
         if type(input)==list:
             if len(input)==2:
                 paired_input = True
-                input_decompressed = []
-                input_decompressed[0] = input[0]
-                input_decompressed[1] = input[1]
+                input_decompressed = [input[0], input[1]]
             else:
                 input_decompressed = input[0]
         else:
@@ -106,7 +108,7 @@ class Bowtie2():
         stats_par = "%s.stats" % (output) if create_stats else "/dev/null" 
         if type(input_decompressed)==list:
             if len(input_decompressed)==2:
-                input_par = "-1 %s -2 %s" % (input_decompressed[0], input_decompressed[1])
+                input_par = "-1 %s -2 %s -X %s" % (input_decompressed[0], input_decompressed[1], self.X)
             else:
                 input_par = "-U %s" % input_decompressed[0]
         else:
