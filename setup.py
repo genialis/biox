@@ -22,7 +22,7 @@ if __name__ == '__main__':
         author_email=AUTHOR_EMAIL,
         url=URL,
         license=LICENSE,
-        packages=['biox'],
+        packages=PACKAGES = find_packages(),
         package_data={},
         classifiers=[
             'Development Status :: 5 - Production/Stable',
