@@ -1,10 +1,13 @@
-import biox
-from os.path import join as pjoin
 import os
 import sys
 import locale
+from os.path import join as pjoin
+
+import biox
+
 
 #locale.setlocale(locale.LC_ALL, '')
+
 
 class Bowtie():
 
@@ -29,66 +32,77 @@ class Bowtie():
         self.quality = "phred64-quals"
         self.strata = False
         self.enable_n()
-        
+
+
     def enable_n(self, n=2):
         """
         Enable mode n of bowtie mapper.
         """
         self.n = n
         self.v = None
-        
+
+
     def set_X(self, X):
         self.X = X
-        
+
+
     def set_l(self, l):
         """
         Set seed length (l) and enable n mode.
         """
         self.l = l
         self.enable_n()
-        
+
+
     def enable_strata(self, strata):
         """
         Enable strata.
         """
         self.strata = strata
 
+
     def enable_u(self, u):
         """
         Enable mode u. Map all reads.
         """
         self.u = u
-    
+
+
     def enable_v(self, v=2):
         """
         Enable mode v
         """
         self.v = v
         self.n = None
-        
+
+
     def set_m(self, m):
         """
         Set allowed number of multiple hits per read for the hits to be reported.
         """
         self.m = m
-        
+
+
     def set_sam(self, sam):
         """
         Enable sam output.
         """
         self.sam = sam
-        
+
+
     def set_processors(self, processors):
         """
         Set number of processors to use.
         """
         self.processors = processors
-        
+
+
     def set_mode_fasta(self):
         """
         Enable fasta mode.
         """
         self.mode_fasta = True
+
 
     def set_mode_fastq(self):
         """
@@ -96,37 +110,43 @@ class Bowtie():
         """
         self.mode_fasta = False
         self.enable_n()
-        
+
+
     def enable_trim3(self, trim3_iter=None, trim3_step=None):
         """
         Enable iterative trimming of unmapped reads from 3' end.
-        
+
         :param trim3_iter: number of iterations
         :param trim3_step: step of trimming (in nucleotides)
         """
         self.trim3 = True
         self.trim3_iter = trim3_iter if trim3_iter!=None else 5
         self.trim3_step = trim3_step if trim3_step!=None else 2
-        
+
+
     def disable_trim3(self):
         """
         Disable iterative trimming of unmapped reads from 3' end.
         """
         self.trim3 = False
-        
+
+
     def enable_un(self, un):
         self.un_enabled = un
-        
+
+
     def enable_max(self, mx):
         self.max_enabled = mx
-        
+
+
     def set_quality(self, quality):
         """
         Set qualities of data from FASTQ. Possible options as in bowtie manual.
         :param quality: "solexa-quals", "phred33-quals", "phred64-quals", "integer-quals"
         """
         self.quality = quality
-        
+
+
     def read_statfile(self, file):
         reads = mapped = 0
         f = open(file, "rt")
@@ -140,11 +160,12 @@ class Bowtie():
                 mapped = int(r.split("# reads with at least one reported alignment: ")[1].split(" ")[0])
             r = f.readline()
         return (reads, mapped)
-        
+
+
     def map(self, index, input, output, index_path=None, create_stats=True, bam=True, delete_temp=True, bam_include_unmapped = False, simulate = False, verbose=False, keep_unmapped = True):
         """
         Map reads to the reference.
-        
+
         :param index: the name of the reference sequence index (dd/dp)
         :param input: full path to FASTA or FASTQ file with reads
         :param output: output folder
@@ -152,11 +173,11 @@ class Bowtie():
         :param verbose: Print each command that is executed (verbose mode)
         :param simulate: Only simulate mappings and doesn't execute any commands (together with verbose, prints out all the mapping commands)
         """
-        
+
         executed_commands = []
         output_log = open("%s.log" % output, "wt")
         paired_input = False
-        
+
         if type(input)==list:
             if len(input)==2:
                 paired_input = True
@@ -167,7 +188,7 @@ class Bowtie():
                 input_decompressed = biox.utils.decompress(input[0])
         else:
             input_decompressed = biox.utils.decompress(input)
-       
+
         sam_par = "--sam" if self.sam else ""
         bam_unmapped_par = "-F 4" if bam_include_unmapped else ""
         u_par = "-u %s" % self.u if self.u != None else ""
@@ -186,7 +207,7 @@ class Bowtie():
         un_files = []
         bam_files = []
         if self.trim3==False:
-            stats_par = "%s.stats" % (output) if create_stats else "/dev/null" 
+            stats_par = "%s.stats" % (output) if create_stats else "/dev/null"
             if type(input_decompressed)==list:
                 if len(input_decompressed)==2:
                     input_par = "-1 %s -2 %s -X %s" % (input_decompressed[0], input_decompressed[1], self.X)
@@ -219,7 +240,7 @@ class Bowtie():
                     print command
                 if not simulate:
                     str, err = biox.utils.cmd(command)
-                output_log.write(command+"\n")   
+                output_log.write(command+"\n")
                 executed_commands.append(command)
             if create_stats and not simulate:
                 stat_files.append(stats_par)
@@ -235,8 +256,8 @@ class Bowtie():
             mapped = {}
             for t in range(0, self.trim3_iter+1):
                 trim3 = t * self.trim3_step
-                stats_par = "%s.trim%s.stats" % (output, trim3) if create_stats else "/dev/null" 
-                
+                stats_par = "%s.trim%s.stats" % (output, trim3) if create_stats else "/dev/null"
+
                 if t==0:
                     if type(input_decompressed)==list:
                         if len(input_decompressed)==2:
@@ -251,7 +272,7 @@ class Bowtie():
                             input_par = "-1 %s_1 -2 %s_2" % (un_par, un_par)
                     else:
                         input_par = un_par
-                        
+
                 # use _ instead of . here because pair-end mapping naming of
                 # bowtie is not working correctly when using dot
                 # eg.: output.trim0.unmapped -> output.trim0_1.unmapped, output.trim0_2.unmapped
@@ -259,7 +280,7 @@ class Bowtie():
                 un_par = output+"_trim%s_unmapped" % trim3
 
                 fasta_par = "-f" if self.mode_fasta==True else ""
-                
+
                 max_par = "--max "+output+".trim%s.maxmulti" % trim3 if self.max_enabled else ""
                 trim3_par = "--trim3 %s" % trim3
                 output_par = output+".trim%s.sam" % trim3
@@ -289,7 +310,7 @@ class Bowtie():
                     executed_commands.append(command)
                     bam_files.append(output_par[:-3]+"bam")
                     if verbose:
-                        print command                    
+                        print command
                     if not simulate:
                         str, err = biox.utils.cmd(command)
                 if create_stats and not simulate:
@@ -304,8 +325,8 @@ class Bowtie():
                     print command
                 if not simulate:
                     str, err = biox.utils.cmd(command)
-                output_log.write(command+"\n") 
-                executed_commands.append(command)                
+                output_log.write(command+"\n")
+                executed_commands.append(command)
             # create trim statistics
             if create_stats and not simulate:
                 all_reads = 0
@@ -322,7 +343,7 @@ class Bowtie():
                     mapped_reads += float(mapped.get(trim, 0))
                 f.write("all\t%s\t%s\t%.2f%%\n" % (locale.format("%d", all_reads, True), locale.format("%d", mapped_reads, True), (mapped_reads/max(all_reads, 1) * 100)))
                 f.close()
-                
+
         if bam: # sort and index bam file
             bam_sorted = bam_output[:-4]+"_sorted"
             command = "{samtools_exec} sort {bam} {bam_sorted}".format(samtools_exec = self.samtools_exec, bam = bam_output, bam_sorted = bam_sorted)
@@ -425,7 +446,7 @@ class Bowtie():
                         print "mv %s %s" % (to_keep[1], "%s.2.unmapped" % output)
                         print "rm %s" % ("%s.1.unmapped" % output)
                         print "rm %s" % ("%s.2.unmapped" % output)
-                 
+
         # delete temp input files
         if type(input_decompressed)==list:
             for index, file in enumerate(input_decompressed):
@@ -448,18 +469,17 @@ class Bowtie():
                         print "rm %s" % input_decompressed
                 except:
                     pass
-                    
+
         output_log.close()
         return executed_commands
-        
+
+
     def make_index(self, fasta, index_name):
         output = pjoin(biox.bowtie_index_folder, index_name)
         command = "{bowtie_build_exec} {fasta} {output}".format \
         (bowtie_build_exec = self.bowtie_build_exec, fasta = fasta, output = output)
-        print command
         std, err = biox.utils.cmd(command)
         # also make color index
         command = "{bowtie_build_exec} --color {fasta} {output}".format \
         (bowtie_build_exec = self.bowtie_build_exec, fasta = fasta, output = output+"_color")
-        print command
         std, err = biox.utils.cmd(command)

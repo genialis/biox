@@ -2,21 +2,39 @@ import os
 import sys
 import subprocess
 import gzip
+import logging
+
 import biox
+
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
+
+std = logging.StreamHandler()
+std.setLevel(logging.INFO)
+std.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+log.addHandler(std)
+
+
+def verbosity(level=logging.WARNING):
+    std.setLevel(level)
+    log.setLevel(level)
+
 
 def interval_overlap(start1, stop1, start2, stop2):
     if stop1 < start2 or stop2 < start1:
         return 0
-    else:        
+    else:
         return max(0, min(stop1, stop2) - max(start1, start2)) + 1
+
 
 def merge_ints(ints):
 
     def take_next(ints):
         to_return = ints[0]
         del ints[0]
-        return to_return      
-        
+        return to_return
+
     def add_new(ints, (start, stop)):
         if len(ints)==0:
             ints.append((start, stop))
@@ -27,9 +45,9 @@ def merge_ints(ints):
             ints.append((start_0, max(stop_0, stop)))
         else:
             ints.append((start, stop))
-            
+
     ints.sort()
-    ints_merged = []            
+    ints_merged = []
     while len(ints)>0:
         (start, stop) = take_next(ints)
         add_new(ints_merged, (start, stop))
@@ -59,54 +77,73 @@ def merge_ints(ints):
 # -cl : this loads the path (loads .bashrc) for the user running the PIPAx wsgi daemon
 endings = [".gzip", ".gz", ".bz2"]
 
+
 class Cmd():
+
 
     def __init__(self, command):
         self.command = command
+        log.info(command)
+
         if biox.os_shell!="":
             self.process = subprocess.Popen(['/bin/bash', '-cl', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else:
             self.process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
         self.pid = self.process.pid
-        
+
+
     def start(self):
         output, error = self.process.communicate()
         self.return_code = self.process.returncode
+        if error: log.error(error)
+        if output: log.info(output)
         return output, error
 
+
 def cmd(command, shell=True):
+    log.info(command)
+
     if biox.os_shell!="":
         process = subprocess.Popen(['/bin/bash', '-cl', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     else:
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
     output, error = process.communicate()
+    if error: log.error(error)
+    if output: log.info(output)
+
     return output, error
 
+
 def cmd_pipe(command, shell=True):
+    log.info(command)
+
     if biox.os_shell!="":
         process = subprocess.Popen(['/bin/bash', '-cl', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     else:
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return process.stdout
-    
+
+
 def decompress(source, dest=None):
     """
     Decompress gzip or bzip2 files. The original compressed file is left untouched.
-    
+
     :param dest: the uncompressed output is written to this file. If omitted, the uncompressed content is written to source name but without ".gz" or ".bz2". The original compressed file is left untouched.
     """
-    
+
     if dest==None:
         for end in endings:
             if source.endswith(end):
                 dest = source[:-len(end)]
                 break
-    
+
     if source.endswith(".gzip") or source.endswith(".gz"):
         command = "gunzip -c %s > %s" % (source, dest)
         out, err = cmd(command)
         return dest
-        
+
     if source.endswith(".bz2"):
         command = "bunzip2 -c %s > %s" % (source, dest)
         out, err = cmd(command)
@@ -114,15 +151,17 @@ def decompress(source, dest=None):
 
     return source # no decompression
 
+
 def gzip(source):
     """
     Compress (gzip) input.
     """
-    
+
     command = "gzip -f %s" % (source)
     out, err = cmd(command)
-    return source+".gz"
-    
+    return source + ".gz"
+
+
 def process_exists(pid, os="linux"):
     if os=="linux":
         output, error = biox.utils.cmd("ps -p %s" % pid)
@@ -134,6 +173,7 @@ def process_exists(pid, os="linux"):
         processes = WMI.InstancesOf('Win32_Process')
         plist = [process.Properties_('ProcessID').Value for process in processes]
         return pid in plist
+
 
 def web_2_txt(string):
     return string.replace("\"", "").replace("'", "").replace("%2C", ",").replace("%2F", "/").replace("%3C", "<").replace("%3D", "=").replace("%3E", ">").replace("%22", "\"").replace("%2B", "+").replace("%3B", ";").replace("%0A", "").replace("%25", "%").replace("%27", "'").replace("%28", "(").replace("%29", ")").replace("%26", "&").replace("%09", "").replace("%23", "#")

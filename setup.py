@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 NAME = "BIOx"
 VERSION = "0.1"
 
-DESCRIPTION = "A Python library which PIPA uses to perform bioinformatics analysis."
+DESCRIPTION = "A Python library which PIPA uses for bioinformatics analysis."
 LONG_DESCRIPTION = open(os.path.join(os.path.dirname(__file__), 'README.rst')).read()
 AUTHOR = "Bioinformatics Laboratory at University of Ljubljana"
 AUTHOR_EMAIL = "marko.toplak@fri.uni-lj"
