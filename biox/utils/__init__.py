@@ -8,15 +8,18 @@ import biox
 
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+log.setLevel(logging.WARNING)
 
 std = logging.StreamHandler()
-std.setLevel(logging.INFO)
+std.setLevel(logging.WARNING)
 std.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
 log.addHandler(std)
 
 
-def verbosity(level=logging.WARNING):
+def verbosity(level=None):
+    if level is None:
+        return log.getEffectiveLevel()
+
     std.setLevel(level)
     log.setLevel(level)
 

@@ -2,6 +2,7 @@ import os
 import sys
 import locale
 from os.path import join as pjoin
+import logging
 
 import biox
 
@@ -174,6 +175,10 @@ class Bowtie():
         :param simulate: Only simulate mappings and doesn't execute any commands (together with verbose, prints out all the mapping commands)
         """
 
+        old_log_level = biox.utils.verbosity()
+        if verbose:
+            biox.utils.verbosity(logging.INFO)
+
         executed_commands = []
         output_log = open("%s.log" % output, "wt")
         paired_input = False
@@ -226,8 +231,6 @@ class Bowtie():
             un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors, u_par = u_par, strata_par=strata_par, l_par = l_par, quality = self.quality)
             output_log.write(command+"\n")
             executed_commands.append(command)
-            if verbose:
-                print command
             if not simulate:
                 str, err = biox.utils.cmd(command)
             sam_files.append(output_par)
@@ -236,8 +239,6 @@ class Bowtie():
             if bam: # create bam file
                 bam_output = "%s.bam" % output
                 command = "{samtools_exec} view -F 4 {bam_unmapped_par} -bS {sam} > {bam}".format(samtools_exec = self.samtools_exec, sam = output_par, bam = bam_output, bam_unmapped_par = bam_unmapped_par)
-                if verbose:
-                    print command
                 if not simulate:
                     str, err = biox.utils.cmd(command)
                 output_log.write(command+"\n")
@@ -288,8 +289,6 @@ class Bowtie():
                 (bowtie_exec = self.bowtie_exec, fasta_par = fasta_par, index_par = index_par, input_par = input_par, output_par = output_par, \
                 sam_par = sam_par, n_par = n_par, v_par = v_par, output_stats = stats_par, m_par = m_par, trim3_par = trim3_par, \
                 un_par = un_par, max_par = max_par, processors = "-p %s" % self.processors, u_par = u_par, strata_par=strata_par, l_par = l_par, quality = self.quality)
-                if verbose:
-                    print command
                 if not simulate:
                     str, err = biox.utils.cmd(command)
                 output_log.write(command+"\n")
@@ -309,8 +308,6 @@ class Bowtie():
                     output_log.write(command+"\n")
                     executed_commands.append(command)
                     bam_files.append(output_par[:-3]+"bam")
-                    if verbose:
-                        print command
                     if not simulate:
                         str, err = biox.utils.cmd(command)
                 if create_stats and not simulate:
@@ -321,8 +318,6 @@ class Bowtie():
                 bam_output = "%s.bam" % output
                 command = "{samtools_exec} merge -h {header_sam} -f {bam_output} {bam_files}".format(samtools_exec = self.samtools_exec, \
                 header_sam = output+".trim0.sam", bam_output = bam_output, bam_files = " ".join(bam_files))
-                if verbose:
-                    print command
                 if not simulate:
                     str, err = biox.utils.cmd(command)
                 output_log.write(command+"\n")
@@ -347,15 +342,11 @@ class Bowtie():
         if bam: # sort and index bam file
             bam_sorted = bam_output[:-4]+"_sorted"
             command = "{samtools_exec} sort {bam} {bam_sorted}".format(samtools_exec = self.samtools_exec, bam = bam_output, bam_sorted = bam_sorted)
-            if verbose:
-                print command
             if not simulate:
                 str, err = biox.utils.cmd(command)
             output_log.write(command+"\n")
             executed_commands.append(command)
             command = "{samtools_exec} index {bam_sorted}".format(samtools_exec = self.samtools_exec, bam_sorted = bam_sorted+".bam")
-            if verbose:
-                print command
             if not simulate:
                 str, err = biox.utils.cmd(command)
             output_log.write(command+"\n")
@@ -471,6 +462,8 @@ class Bowtie():
                     pass
 
         output_log.close()
+        if verbose:
+            biox.utils.verbosity(old_log_level)
         return executed_commands
 
 
