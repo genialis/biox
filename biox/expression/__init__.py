@@ -56,7 +56,7 @@ def gene_expression_overlap(gtf_file, bam_file, quality = 30, genes = None):
             if pysam_enabled:
                 genes_exp[gene_id] = genes_exp.get(gene_id, 0) + pysam_bam.count(gene.chr, feature.start-1, feature.stop-1)
             else:
-                command = "samtools view -F 4 -q {quality} -c {bam_file} {chr}:{start}-{stop}".format(bam_file = bam_file, quality = 30, chr=gene.chr, start=feature.start, stop=feature.stop)
+                command = "{samtools} view -F 4 -q {quality} -c {bam_file} {chr}:{start}-{stop}".format(samtools=os.path.join(biox.samtools_folder, "samtools"), bam_file = bam_file, quality = 30, chr=gene.chr, start=feature.start, stop=feature.stop)
                 output, error = biox.utils.cmd(command)
                 if output!="":
                     genes_exp[gene_id] = genes_exp.get(gene_id, 0) + int(output)
@@ -73,11 +73,11 @@ def gene_expression(gtf_file, bam_file, quality = 30, genes = None):
         for gene_id in genes:
             genes_exp[gene_id] = 0
 
-    command = "samtools view -F 4 -q {quality} -c {bam_file}".format(bam_file = bam_file, quality = quality)
+    command = "{samtools} view -F 4 -q {quality} -c {bam_file}".format(samtools=os.path.join(biox.samtools_folder, "samtools"), bam_file = bam_file, quality = quality)
     output, error = biox.utils.cmd(command)
     reads = int(output)
 
-    command = "samtools view -F 4 -q {quality} {bam_file}".format(bam_file = bam_file, quality = quality)
+    command = "{samtools} view -F 4 -q {quality} {bam_file}".format(samtools=os.path.join(biox.samtools_folder, "samtools"), bam_file = bam_file, quality = quality)
     current = 0
     for line in biox.utils.cmd_pipe(command):
         current += 1
@@ -109,11 +109,11 @@ def gene_expression_promoters(gtf_file, bam_file, quality = 30, genes = None):
         for gene_id in genes:
             genes_exp[gene_id] = 0
 
-    command = "samtools view -F 4 -q {quality} -c {bam_file}".format(bam_file = bam_file, quality = quality)
+    command = "{samtools} view -F 4 -q {quality} -c {bam_file}".format(samtools=os.path.join(biox.samtools_folder, "samtools"), bam_file = bam_file, quality = quality)
     output, error = biox.utils.cmd(command)
     reads = int(output)
 
-    command = "samtools view -F 4 -q {quality} {bam_file}".format(bam_file = bam_file, quality = quality)
+    command = "{samtools} view -F 4 -q {quality} {bam_file}".format(samtools=os.path.join(biox.samtools_folder, "samtools"), bam_file = bam_file, quality = quality)
     current = 0
     for line in biox.utils.cmd_pipe(command):
         current += 1
@@ -137,7 +137,7 @@ def gene_expression_promoters(gtf_file, bam_file, quality = 30, genes = None):
 
 def bam_chromosomes(bam_file):
     chrs = {}
-    command = "samtools view -H {bam_file}".format(bam_file = bam_file)
+    command = "{samtools} view -H {bam_file}".format(samtools=os.path.join(biox.samtools_folder, "samtools"), bam_file = bam_file)
     output, error = biox.utils.cmd(command)
     output = output.split("\n")
     for line in output:
@@ -178,7 +178,7 @@ def bam_coverage(bam_file, chr="chr1", strand=None, start=1, stop=None, position
         stop = chrs[chr]
     start = int(start)
     stop = int(stop)
-    command = "samtools view {strand_par} {bam_file} {chr}:{start}-{stop}".format(bam_file = bam_file, strand_par=strand_par, chr=chr, start=start, stop=stop)
+    command = "{samtools} view {strand_par} {bam_file} {chr}:{start}-{stop}".format(samtools=os.path.join(biox.samtools_folder, "samtools"), bam_file = bam_file, strand_par=strand_par, chr=chr, start=start, stop=stop)
     result = {}
     for line in biox.utils.cmd_pipe(command):
         line = line.split("\t")
