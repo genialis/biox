@@ -19,6 +19,9 @@ class Gtf():
         self.filename = filename
         f = biox.data.TabReader(filename)
         while f.readline():
+            # ignore comments and empty lines
+            if len(f.r) == 0 or f.r[0].strip().startswith('#'):
+                continue
             chr = f.r[0]
             gene_type = f.r[2]
             start = int(f.r[3])
