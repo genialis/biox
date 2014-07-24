@@ -1,10 +1,19 @@
 import math
+import logging
 
 import biox
 import data
 import map
 import utils
 import expression
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.WARNING)
+
+std = logging.StreamHandler()
+std.setLevel(logging.WARNING)
+std.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+log.addHandler(std)
 
 
 def gff3_from_fasta(fasta_file):
