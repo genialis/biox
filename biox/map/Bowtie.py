@@ -341,7 +341,7 @@ class Bowtie():
 
         if bam: # sort and index bam file
             bam_sorted = bam_output[:-4]+"_sorted"
-            command = "{samtools_exec} sort {bam} {bam_sorted}".format(samtools_exec = self.samtools_exec, bam = bam_output, bam_sorted = bam_sorted)
+            command = "{samtools_exec} sort -o {bam_sorted}.bam {bam}".format(samtools_exec = self.samtools_exec, bam = bam_output, bam_sorted = bam_sorted)
             if not simulate:
                 str, err = biox.utils.cmd(command)
             output_log.write(command+"\n")

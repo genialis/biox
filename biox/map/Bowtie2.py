@@ -19,27 +19,27 @@ class Bowtie2():
         self.trim3 = False
         self.processors = 2
         self.mode_fasta = False
-        self.un_enabled = False        
+        self.un_enabled = False
         self.quality = "phred64-quals"
         self.mode_par = "--very-fast-local"
         self.u = None
         self.X = 1000
-        
+
     def enable_u(self, u):
         """
         Enable mode u. Map all reads.
         """
-        self.u = u        
-        
+        self.u = u
+
     def set_processors(self, processors):
         """
         Set number of processors to use.
         """
         self.processors = processors
-        
+
     def set_X(self, X):
         self.X = X
-        
+
     def set_mode_fasta(self):
         """
         Enable fasta mode.
@@ -51,40 +51,40 @@ class Bowtie2():
         Enable fastq mode.
         """
         self.mode_fasta = False
-        
+
     def set_mode(self, mode_par):
         """
         Set alignment mode
         """
         self.mode_par = mode_par
-        
+
     def enable_un(self, un):
         self.un_enabled = un
-        
+
     def set_quality(self, quality):
         """
         Set qualities of data from FASTQ. Possible options as in bowtie manual.
         :param quality: "solexa-quals", "phred33-quals", "phred64-quals", "integer-quals"
         """
         self.quality = quality
-        
+
     def map(self, index, input, output, index_path=None, create_stats=True, bam=True, delete_temp=True, bam_include_unmapped = False, simulate = False, verbose=False, keep_unmapped = True):
         """
         Map reads to the reference.
-        
+
         :param index: the name of the reference sequence index (dd/dp)
         :param input: full path to FASTA or FASTQ file with reads
         :param output: output folder
         :param index_path: specify full path to genome index, instead of using the indexes in biox.config.bowtie_index_folder folder        :param verbose: Print each command that is executed (verbose mode)
         :param simulate: Only simulate mappings and doesn't execute any commands (together with verbose, prints out all the mapping commands)
         """
-        
+
         u_par = "-u %s" % self.u if self.u != None else ""
-        
+
         executed_commands = []
         output_log = open("%s.log" % output, "wt")
         paired_input = False
-        
+
         # input decompressed is the same as input (bowtie2 reads .gz)
         if type(input)==list:
             if len(input)==2:
@@ -94,7 +94,7 @@ class Bowtie2():
                 input_decompressed = input[0]
         else:
             input_decompressed = input
-       
+
         bam_unmapped_par = "-F 4" if bam_include_unmapped else ""
         fasta_par = "-f" if self.mode_fasta==True else ""
         if index_path!=None: # specify direct path to bowtie index
@@ -105,7 +105,7 @@ class Bowtie2():
         stat_files = []
         un_files = []
         bam_files = []
-        stats_par = "%s.stats" % (output) if create_stats else "/dev/null" 
+        stats_par = "%s.stats" % (output) if create_stats else "/dev/null"
         if type(input_decompressed)==list:
             if len(input_decompressed)==2:
                 input_par = "-1 %s -2 %s -X %s" % (input_decompressed[0], input_decompressed[1], self.X)
@@ -136,14 +136,14 @@ class Bowtie2():
                 print command
             if not simulate:
                 str, err = biox.utils.cmd(command)
-            output_log.write(command+"\n")   
+            output_log.write(command+"\n")
             executed_commands.append(command)
         if create_stats and not simulate:
             print "stats"
-                
+
         if bam: # sort and index bam file
             bam_sorted = bam_output[:-4]+"_sorted"
-            command = "{samtools_exec} sort {bam} {bam_sorted}".format(samtools_exec = self.samtools_exec, bam = bam_output, bam_sorted = bam_sorted)
+            command = "{samtools_exec} sort -o {bam_sorted} {bam}".format(samtools_exec = self.samtools_exec, bam = bam_output, bam_sorted = bam_sorted)
             if verbose:
                 print command
             if not simulate:
@@ -174,10 +174,10 @@ class Bowtie2():
         # delete temp files
         if bam and os.path.exists(output+".sam"):
             os.remove(output+".sam")
-            
+
         output_log.close()
         return executed_commands
-        
+
     def make_index(self, fasta, index_name):
         output = pjoin(biox.bowtie_index_folder, index_name)
         command = "{bowtie_build_exec} {fasta} {output}".format \
